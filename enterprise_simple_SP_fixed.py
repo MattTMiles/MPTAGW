@@ -49,7 +49,7 @@ for p, t in zip(parfiles, timfiles):
     psrs.append(psr)
     time.sleep(2)
 
-noise = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/total_params.json'
+noise = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/noisefile_incRed.json'
 
 params = {}
 with open(noise, 'r') as fp:
@@ -68,12 +68,12 @@ equad = parameter.Constant()
 ecorr = parameter.Constant() # we'll set these later with the params dictionary
 
 # red noise parameters
-log10_A_red = parameter.Uniform(-20, -11)
-gamma_red = parameter.Uniform(0, 7)
+log10_A_red = parameter.Constant() 
+gamma_red = parameter.Constant() 
 
 # dm-variation parameters
-log10_A_dm = parameter.Uniform(-20, -11)
-gamma_dm = parameter.Uniform(0, 7)
+log10_A_dm = parameter.Constant() 
+gamma_dm = parameter.Constant() 
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
 log10_A_gw = parameter.Uniform(-18,-14)('log10_A_gw')
@@ -155,7 +155,7 @@ ndim = len(x0)
 # set up the sampler:
 # initial jump covariance matrix
 cov = np.diag(np.ones(ndim) * 0.01**2)
-outDir = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/out/GW_PTMCMC_constGamma'
+outDir = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/out/GW_PTMCMC_constGamma_fixedSP'
 
 sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, 
                  outDir=outDir, resume=True)

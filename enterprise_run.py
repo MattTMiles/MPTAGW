@@ -150,9 +150,11 @@ if "dm_c" in noise:
 if "chrom" in noise:
     log10_A_chrom_prior = parameter.Uniform(-20, -11)
     gamma_chrom_prior = parameter.Uniform(0, 7)
+    chrom_gp_idx = parameter.Uniform(0,7)
 if "chrom_c" in noise:
     log10_A_chrom_prior = parameter.Constant()
     gamma_chrom_prior = parameter.Constant()
+    chrom_gp_idx = parameter.Constant()
 
 if "gw" in noise:
     log10_A_gw = parameter.Uniform(-18,-14)('log10_A_gw')
@@ -190,7 +192,7 @@ if "dm" in noise or "dm_c" in noise:
 if "chrom" in noise or "chrom_c" in noise:
     chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior,
                                 gamma=gamma_chrom_prior)
-    idx = 4  # Define freq^-idx scaling
+    idx = chrom_gp_idx
     components = 30
     chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
                                                             idx=idx)
