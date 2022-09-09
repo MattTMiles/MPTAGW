@@ -47,7 +47,7 @@ ephemeris = 'DE438'
 for p, t in zip(parfiles, timfiles):
     psr = Pulsar(p, t, ephem=ephemeris)
     psrs.append(psr)
-    time.sleep(2)
+    time.sleep(3)
 
 noise = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/total_params.json'
 
@@ -76,7 +76,7 @@ log10_A_dm = parameter.Uniform(-20, -11)
 gamma_dm = parameter.Uniform(0, 7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
-log10_A_gw = parameter.Uniform(-18,-14)('log10_A_gw')
+log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
 gamma_gw = parameter.Constant(4.33)('gamma_gw')
 
 def dm_noise(log10_A,gamma,Tspan,components=30,option="powerlaw"):
@@ -149,22 +149,24 @@ with open(redNoise, 'r') as fp:
 # Taken from single pulsar red noise analysis
 x0 = [red_params[p] for p in pta.param_names[:-1]]
 x0.append(pta.params[-1].sample())
+x0 = np.array(x0)
 #x0 = np.hstack([p.sample() for p in pta.params])
 ndim = len(x0)
 
 # set up the sampler:
 # initial jump covariance matrix
 cov = np.diag(np.ones(ndim) * 0.01**2)
-outDir = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/out/GW_PTMCMC_constGamma'
+outDir = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/out/GW_PTMCMC_constGamma_SP_priors_MARK2'
 
 sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, 
                  outDir=outDir, resume=True)
 
-pta.get_lnprior(x0)
+
 
 # sampler for N steps
 N = int(5e6)  # normally, we would use 5e6 samples (this will save time)
-x0 = np.hstack([p.sample() for p in pta.params])
+pta.get_lnprior(x0)
+#x0 = np.hstack([p.sample() for p in pta.params])
 sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50, )
 
 

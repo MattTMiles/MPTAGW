@@ -42,6 +42,9 @@ if psrlist is not None:
     parfiles = [x for x in parfiles if x.split('/')[-1].split('.')[0] in psrlist]
     timfiles = [x for x in timfiles if x.split('/')[-1].split('.')[0] in psrlist]
 
+parfiles = [x for x in parfiles if "J0437" not in x]
+timfiles = [x for x in timfiles if "J0437" not in x]
+
 psrs = []
 ephemeris = 'DE438'
 for p, t in zip(parfiles, timfiles):
@@ -49,7 +52,7 @@ for p, t in zip(parfiles, timfiles):
     psrs.append(psr)
     time.sleep(3)
 
-noise = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/noisefile_incRed.json'
+noise = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/total_params.json'
 
 params = {}
 with open(noise, 'r') as fp:
@@ -68,12 +71,12 @@ equad = parameter.Constant()
 ecorr = parameter.Constant() # we'll set these later with the params dictionary
 
 # red noise parameters
-log10_A_red = parameter.Constant() 
-gamma_red = parameter.Constant() 
+log10_A_red = parameter.Uniform(-20, -11)
+gamma_red = parameter.Uniform(0, 7)
 
 # dm-variation parameters
-log10_A_dm = parameter.Constant() 
-gamma_dm = parameter.Constant() 
+log10_A_dm = parameter.Uniform(-20, -11)
+gamma_dm = parameter.Uniform(0, 7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
 log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
@@ -147,24 +150,26 @@ with open(redNoise, 'r') as fp:
 
 # set initial parameters drawn from prior
 # Taken from single pulsar red noise analysis
-#x0 = [red_params[p] for p in pta.param_names[:-1]]
-#x0.append(pta.params[-1].sample())
-x0 = np.hstack([p.sample() for p in pta.params])
+x0 = [red_params[p] for p in pta.param_names[:-1]]
+x0.append(pta.params[-1].sample())
+x0 = np.array(x0)
+#x0 = np.hstack([p.sample() for p in pta.params])
 ndim = len(x0)
 
 # set up the sampler:
 # initial jump covariance matrix
 cov = np.diag(np.ones(ndim) * 0.01**2)
-outDir = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/out/GW_PTMCMC_constGamma_fixedSP'
+outDir = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/out/GW_PTMCMC_constGamma_SP_priors_MARK2'
 
 sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, 
                  outDir=outDir, resume=True)
 
-pta.get_lnprior(x0)
+
 
 # sampler for N steps
 N = int(5e6)  # normally, we would use 5e6 samples (this will save time)
-x0 = np.hstack([p.sample() for p in pta.params])
+pta.get_lnprior(x0)
+#x0 = np.hstack([p.sample() for p in pta.params])
 sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50, )
 
 

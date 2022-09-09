@@ -46,7 +46,8 @@ parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisef
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search", help="The noise parameters to search over. Timing model is default. Include as '-noise_search noise1 noise2 noise3' etc. The _c variations of the noise redirects the noise to the constant noisefile values", \
     choices={"efac", "equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "red_c", "dm", "chrom", "chrom_c", "dm_c", "gw", "gw_const_gamma", "gw_c"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc"}, required=True)
-parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request")
+parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=2)")
+parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
 args = parser.parse_args()
 
 pulsar = str(args.pulsar)
@@ -55,6 +56,7 @@ noisefile = args.noisefile
 noise = args.noise_search
 sampler = args.sampler
 pool = args.pool
+nlive=args.nlive
 partim = args.partim
 
 psrlist=None
@@ -81,7 +83,7 @@ ephemeris = 'DE438' # Static as not using bayesephem
 for p, t in zip(parfiles, timfiles):
     psr = Pulsar(p, t, ephem=ephemeris)
     psrs.append(psr)
-    time.sleep(2)
+    time.sleep(3)
 
 ## Get parameter noise dictionary
 params = {}
@@ -121,15 +123,15 @@ def dm_noise(log10_A,gamma,Tspan,components=30,option="powerlaw"):
 ## Defining the noise parameters
 
 if "efac" in noise:
-    efac = parameter.Uniform(0,10)
+    efac = parameter.Uniform(0.1,5)
 if "efac_c" in noise:
     efac = parameter.Constant()
 if "equad" in noise:
-    equad = parameter.Uniform(-10,0) 
+    equad = parameter.Uniform(-10,-1) 
 if "equad_c" in noise:
     equad = parameter.Constant()
 if "ecorr" in noise:
-    ecorr = parameter.Uniform(-10,0) 
+    ecorr = parameter.Uniform(-10,-1) 
 if "ecorr_c" in noise:
     ecorr = parameter.Constant()
 
@@ -157,14 +159,15 @@ if "chrom_c" in noise:
     chrom_gp_idx = parameter.Constant()
 
 if "gw" in noise:
-    log10_A_gw = parameter.Uniform(-18,-14)('log10_A_gw')
+    log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
     gamma_gw = parameter.Uniform(0,7)('gamma_gw')
-if "gw_const_gamma" in noise:
-    log10_A_gw = parameter.Uniform(-18,-14)('log10_A_gw')
-    gamma_gw = parameter.Constant(4.33)('gamma_gw')
 if "gw_c" in noise:
     log10_A_gw = parameter.Constant(-14)('log10_A_gw')
     gamma_gw = parameter.Constant(4.33)('gamma_gw')
+if "gw_const_gamma" in noise:
+    log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
+    gamma_gw = parameter.Constant(4.33)('gamma_gw')
+
 
 
 ## Put together the signal model
@@ -221,18 +224,30 @@ if sampler == "bilby":
 
     label = results_dir
     #nlive of 400 for now. Can be played with.
+    
     if pulsar != "None":
         if pool is not None:
-
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}_{1}'.format(pulsar,results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=pool, verbose=True)
+            if nlive is not None:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}_{1}'.format(pulsar,results_dir), label=label, sampler='dynesty', resume=True, nlive=nlive, npool=pool, verbose=True)
+            else:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}_{1}'.format(pulsar,results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=pool, verbose=True)
         else:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}_{1}'.format(pulsar,results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=2, verbose=True)
+            if nlive is not None:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}_{1}'.format(pulsar,results_dir), label=label, sampler='dynesty', resume=True, nlive=nlive, npool=2, verbose=True)
+            else:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}_{1}'.format(pulsar,results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=2, verbose=True)
+
     else:
         if pool is not None:
-
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=pool, verbose=True)
+            if nlive is not None:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=nlive, npool=pool, verbose=True)
+            else:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=pool, verbose=True)
         else:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=2, verbose=True)
+            if nlive is not None:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=nlive, npool=2, verbose=True)
+            else:
+                results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir='out/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=2, verbose=True)
 
     results.plot_corner()
 

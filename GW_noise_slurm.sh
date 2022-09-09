@@ -1,15 +1,15 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=8
-#SBATCH --time=24:00:00
-#SBATCH --job-name=MPTA_GW_search_constGamma
-#SBATCH --mem=15gb
-#SBATCH --tmp=15gb
+#SBATCH --cpus-per-task=16
+#SBATCH --time=48:00:00
+#SBATCH --job-name=MPTA_GW_search_constGamma_SP_priors
+#SBATCH --mem=30gb
+#SBATCH --tmp=30gb
 
 
 source ~/.bashrc
 
 
-touch "MPTA_GW_search_constGamma"
+touch "MPTA_GW_search_constGamma_SP_priors"
 
 conda activate gw
 
@@ -17,7 +17,7 @@ cd /fred/oz002/users/mmiles/MPTA_GW/enterprise
 
 srun python /home/mmiles/soft/GW/enterprise_simple.py
 
-rm -f "MPTA_GW_search_constGamma"
+rm -f "MPTA_GW_search_constGamma_SP_priors"
 
 
 echo done

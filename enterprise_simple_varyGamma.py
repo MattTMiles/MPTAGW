@@ -24,6 +24,8 @@ from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
 import enterprise_extensions
 from enterprise_extensions import models, model_utils, hypermodel, blocks
+import time
+
 
 psrlist = None # define a list of pulsar name strings that can be used to filter.
 # set the data directory
@@ -46,6 +48,7 @@ ephemeris = 'DE438'
 for p, t in zip(parfiles, timfiles):
     psr = Pulsar(p, t, ephem=ephemeris)
     psrs.append(psr)
+    time.sleep(3)
 
 noise = '/fred/oz002/users/mmiles/MPTA_GW/enterprise/total_params.json'
 
@@ -74,7 +77,7 @@ log10_A_dm = parameter.Uniform(-20, -11)
 gamma_dm = parameter.Uniform(0, 7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
-log10_A_gw = parameter.Uniform(-18,-14)('log10_A_gw')
+log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
 gamma_gw = parameter.Uniform(0,7)('gamma_gw')
 
 def dm_noise(log10_A,gamma,Tspan,components=30,option="powerlaw"):
