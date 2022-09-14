@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=2
-#SBATCH --time=02:00:00
+#SBATCH --time=05:00:00
 #SBATCH --job-name=white_noise_red_noise_no_ecorr
 #SBATCH --mem=1gb
 #SBATCH --tmp=1gb
