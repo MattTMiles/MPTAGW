@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=16
-#SBATCH --time=48:00:00
+#SBATCH --time=72:00:00
 #SBATCH --job-name=MPTA_GW_search_constGamma_SP_priors
 #SBATCH --mem=30gb
 #SBATCH --tmp=30gb
