@@ -7,7 +7,7 @@ import numpy as np
 
 
 pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list.txt"
-enterprise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out"
+enterprise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc"
 
 all_evidence= {}
 
