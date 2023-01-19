@@ -31,13 +31,13 @@ for i, pulsar in enumerate(to_use):
         pdf_SPGW_A = np.histogram(posts_SPGW_A,bins=np.linspace(-18,-12,24),density=True)[0] + 1e-20
         pdf_SPGW_g = np.histogram(posts_SPGW_g,bins=np.linspace(0,7,24),density=True)[0] + 1e-20
         
-        #pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,94),density=True)[0] + 1e-20
-        pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,24),density=True)[0] + 1e-20
+        pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,94),density=True)[0] + 1e-20
+        #pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,24),density=True)[0] + 1e-20
     except:
         continue
     
-    FWHM = 6
-    #FWHM = 24
+    #FWHM = 6
+    FWHM = 38
     sigma = fwhm2sigma(FWHM)
     smoothed_vals = np.zeros(pdf_SPGW_A.shape)
     x_vals = np.linspace(0,22,23)
@@ -54,8 +54,8 @@ for i, pulsar in enumerate(to_use):
         smoothed_valsg[int(x_position)] = sum(pdf_SPGW_g * kernel)
 
     smoothed_valsC = np.zeros(pdf_SPGWC_A.shape)
-    #x_vals = np.linspace(0,92,93)
-    x_vals = np.linspace(0,22,23)
+    x_vals = np.linspace(0,92,93)
+    #x_vals = np.linspace(0,22,23)
     for x_position in x_vals:
         kernel = np.exp(-(x_vals - x_position) ** 2 / (2 * sigma ** 2))
         kernel = kernel / sum(kernel)
@@ -119,21 +119,25 @@ plt.ylabel("PDF")
 plt.legend()
 #plt.figure()
 '''
-'''
-plt.title("MPTA Factorised Likelihood: Fixed Gamma PL CRN search (linear)")
+
+#plt.title("MPTA Factorised Likelihood: Fixed Gamma PL CRN search (linear)")
 #plt.plot(fact_l_SPGWC_A)
 #plt.bar(np.linspace(-18,-12,95),fact_l_SPGWC_A,width=0.1)
 #plt.bar(np.linspace(-18,-12,23),fact_l_SPGWC_A/fact_l_SPGWC_A.max(),width=0.2,color="xkcd:green",alpha=0.3)
+plt.figure(figsize=(4,8))
 plt.plot(np.linspace(-18,-12,93),fact_l_SPGWC_A/fact_l_SPGWC_A.max(), color="xkcd:green",linewidth=3,label="MPTA CRN detection")
 plt.fill_between(np.linspace(-18,-12,93), fact_l_SPGWC_A/fact_l_SPGWC_A.max(),color="xkcd:green",alpha=0.2)
 plt.axvline(-14.5,color="dimgray",linestyle="--",label="IPTA result")
 plt.ylim(10e-5,1.05)
+plt.xlim(-15,-13.75)
+plt.xticks(fontsize=16)
 plt.yscale("linear")
-plt.xlabel(r"CRN: $log_{10}A_{CP}$")
-plt.ylabel("PDF")
-plt.legend()
-plt.figure()
-'''
+plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=16)
+plt.ylabel("PDF", fontsize=16)
+#plt.legend()
+#plt.tight_layout()
+
+
 '''
 plt.title("Sample 1")
 #plt.plot(fact_l_SPGWC_A)

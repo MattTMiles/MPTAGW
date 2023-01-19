@@ -29,6 +29,8 @@ import enterprise_extensions
 from enterprise_extensions import models, model_utils, hypermodel, blocks
 from enterprise_extensions import timing
 
+from collections import OrderedDict
+
 sys.path.insert(0, '/home/mmiles/soft/enterprise_warp/')
 #sys.path.insert(0, '/fred/oz002/rshannon/enterprise_warp/')
 from enterprise_warp import bilby_warp
@@ -47,8 +49,8 @@ parser.add_argument("-partim", dest="partim", help="Par and tim files for the pu
 parser.add_argument("-results", dest="results", help=r"Name of directory created in the default out directory. Will be of the form {pulsar}_{results}", required = True)
 parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisefile used for the noise analysis.", required = False)
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search", help="The noise parameters to search over. Timing model is default. Include as '-noise_search noise1 noise2 noise3' etc. The _c variations of the noise redirects the noise to the constant noisefile values", \
-    choices={"efac", "equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx", "dm_c", "gw", "gw_const_gamma","gw_const_gamma_wide", "lin_exp_gw_const_gamma_wide", "gw_c", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
-        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "spgw", "spgwc", "spgwc_18", "pm_wn", "pm_wn_no_equad", "pm_wn_sw","pm_wn_altpar", "pm_wn_no_equad_altpar"})
+    choices={"efac", "equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx", "dm_c", "gw", "gw_const_gamma", "gw_c", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
+        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "spgw", "spgwc", "spgwc_18", "pm_wn", "pm_wn_no_equad", "pm_wn_sw"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc"}, required=True)
 parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
 parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
@@ -92,10 +94,10 @@ psrs = []
 if sse is not None and sse != "" and sse != "None":
     ephemeris = sse
 else:
-    ephemeris = 'DE438' # Static as not using bayesephem
+    ephemeris = 'DE440' # Static as not using bayesephem
 
 for p, t in zip(parfiles, timfiles):
-    psr = Pulsar(p, t, ephem=ephemeris)
+    psr = Pulsar(p, t, ephem=ephemeris, drop_t2pulsar=False)
     psrs.append(psr)
     time.sleep(3)
 
@@ -169,18 +171,6 @@ def high_frequencies(freqs):
     """Selection for obs frequencies >=2048MHz"""
     return dict(zip(['high'], [freqs > 1284]))
 
-
-def chrom_splitter(freqs):
-    """Selection for obs frequencies in 4 subbands"""
-
-    d =  dict(zip(['LOW', 'MID_1', 'MID_2', 'HIGH'],
-            [(freqs < 1070), (1070 <= freqs) * (freqs < 1284), (1284 <= freqs) * (freqs < 1498), (freqs >=1712)]))
-    
-    return d
-
-
-chrom_split = selections.Selection(chrom_splitter)
-
 low_freq = selections.Selection(low_frequencies)
 high_freq = selections.Selection(high_frequencies)
 
@@ -246,10 +236,6 @@ if "chrom_cidx_wide" in noise:
     log10_A_chrom_prior = parameter.Uniform(-20, -11)
     gamma_chrom_prior = parameter.Uniform(0, 14)
     chrom_gp_idx = parameter.Constant(4)
-if "chromsplit" in noise:
-    log10_A_chrom_prior = parameter.Uniform(-20, -11)
-    gamma_chrom_prior = parameter.Uniform(0, 7)
-    chrom_gp_idx = parameter.Uniform(0,7)
 
 if "addchrom" in noise:
     log10_A_add_chrom_prior = parameter.Uniform(-20, -11)
@@ -264,13 +250,6 @@ if "gw_c" in noise:
     gamma_gw = parameter.Constant(4.33)('gamma_gw')
 if "gw_const_gamma" in noise:
     log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
-    gamma_gw = parameter.Constant(4.33)('gamma_gw')
-if "gw_const_gamma_wide" in noise:
-    log10_A_gw = parameter.Uniform(-18,-9)('log10_A_gw')
-    gamma_gw = parameter.Constant(4.33)('gamma_gw')
-if "lin_exp_gw_const_gamma_wide" in noise:
-    #log10_A_gw = bilby_warp.linearExponential(-18,-9,'log10_A_gw')
-    log10_A_gw = parameter.LinearExp(-18,-9)('log10_A_gw')
     gamma_gw = parameter.Constant(4.33)('gamma_gw')
 
 if "band_low"in noise:
@@ -296,18 +275,28 @@ if "band_high_c" in noise:
 
 ## Put together the signal model
 
-tm = gp_signals.TimingModel(use_svd=True)
+#tm = gp_signals.TimingModel(use_svd=True)
 
-#tm = timing.timing_block()
+psr.tmparams_orig = OrderedDict.fromkeys(psr.t2pulsar.pars())
+for key in psr.tmparams_orig:
+
+    val = psr.t2pulsar[key].val
+    err = psr.t2pulsar[key].err
+    psr.tmparams_orig[key] = (val, err)
+    if err == 0:
+        raise("No error found!")
+print(psr.tmparams_orig)
+print("Varying:")
+print(psr.tmparams_orig.keys())
+tm = timing.timing_block(tmparam_list=psr.tmparams_orig.keys(), linear=True)
+
 
 s = tm
 
 if "efac" in noise or "efac_c" in noise or "efac_wide" in noise:
     if "equad" in noise or "equad_c" in noise:
-        ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
+        ef = white_signals.MeasurementNoise(efac=efac,log10_t2equad=equad, selection=selection)
         s += ef
-        eq = white_signals.TNEquadNoise(log10_tnequad=equad, selection=selection)
-        s += eq
     else:
         ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
         s += ef
@@ -349,16 +338,6 @@ if "chrom" in noise or "chrom_wide" in noise or "chrom_c" in noise or "chrom_cid
     chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
     s += chrom
 
-if "chromsplit" in noise:
-    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior,
-                                gamma=gamma_chrom_prior)
-    idx = chrom_gp_idx
-    components = 30
-    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                            idx=idx)
-    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, selection = chrom_split, name='chrom_gp_split')
-    s += chrom
-
 if "addchrom" in noise:
     chrom_model = utils.powerlaw(log10_A=log10_A_add_chrom_prior,
                                 gamma=gamma_add_chrom_prior)
@@ -369,7 +348,7 @@ if "addchrom" in noise:
     add_chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='add_chrom_gp')
     s += add_chrom
 
-if "gw" in noise or "gw_c" in noise or "gw_const_gamma" in noise or "gw_const_gamma_wide" in noise or "lin_exp_gw_const_gamma_wide" in noise:
+if "gw" in noise or "gw_c" in noise or "gw_const_gamma" in noise:
     gpl = utils.powerlaw(log10_A=log10_A_gw, gamma=gamma_gw)
     gw = gp_signals.FourierBasisGP(spectrum=gpl, components=30, Tspan=Tspan, name='gwb')
     s += gw
@@ -513,10 +492,6 @@ if "spgw" in noise or "spgwc" in noise or "spgwcm" in noise or "spgwc_18" in noi
     if "spgwc" in noise:
         log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
         gamma_gw = parameter.Constant(4.33)('gamma_gw')
-    
-    elif "spgwc_wide" in noise:
-        log10_A_gw = parameter.Uniform(-18,-9)('log10_A_gw')
-        gamma_gw = parameter.Constant(4.33)('gamma_gw')
 
     #This is a place holder for a quick monopole check, this is not finished, activating it won't do anything
     elif "spgwcm" in noise:
@@ -534,11 +509,8 @@ if "spgw" in noise or "spgwc" in noise or "spgwcm" in noise or "spgwc_18" in noi
     gw = gp_signals.FourierBasisGP(spectrum=gpl, components=30, Tspan=Tspan, name='gwb')
     s += gw
 
-if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_wn_altpar" in noise or "pm_wn_no_equad_altpar" in noise:
-    if not "pm_wn_altpar" in noise and not "pm_wn_no_equad_altpar" in noise:
-        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_active_noise.json"))
-    else:
-        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/partim_investigations_pref_model.json"))
+if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise:
+    pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_active_noise.json"))
     wn_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_ALL_NOISE_EQUAD_CHECKED.json"))
     keys = list(pmev_json.keys())
     wnkeys = list(wn_json.keys())
@@ -547,7 +519,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
     wnmodels = [ wn_model.split("_")[-1] for wn_model in wnkeys if pulsar in wn_model ]
     # Check through the possibilities and add them as appropriate
 
-    for i, pm in enumerate(psrmodels):
+    for pm in psrmodels:
 
         if pm == "RN" or pm == "RED":
             log10_A_red = parameter.Uniform(-20, -11)
@@ -556,7 +528,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
             s += rn
 
-        if pm == "RNWIDE" or ( pm == "RN" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+        if pm == "RNWIDE":
             log10_A_red = parameter.Uniform(-20, -11)
             gamma_red = parameter.Uniform(0, 14)
             pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
@@ -569,7 +541,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
             s += dm
         
-        if pm == "DMWIDE" or ( pm == "DM" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+        if pm == "DMWIDE":
             log10_A_dm = parameter.Uniform(-20, -11)
             gamma_dm = parameter.Uniform(0, 14)
             dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
@@ -587,7 +559,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
             s += chrom
 
-        if pm == "CHROMWIDE" or ( pm == "CHROM" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+        if pm == "CHROMWIDE":
             log10_A_chrom_prior = parameter.Uniform(-20, -11)
             gamma_chrom_prior = parameter.Uniform(0, 14)
             chrom_gp_idx = parameter.Uniform(0,14)
@@ -611,7 +583,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
             s += chrom
 
-        if pm == "CHROMCIDXWIDE" or ( pm == "CHROMCIDX" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+        if pm == "CHROMCIDXWIDE":
             log10_A_chrom_prior = parameter.Uniform(-20, -11)
             gamma_chrom_prior = parameter.Uniform(0, 14)
             chrom_gp_idx = parameter.Constant(4)
@@ -632,7 +604,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
                                         selection=low_freq, name='low_band_noise')
             s += bnl
 
-        if pm == "BLWIDE" or ( pm == "BL" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+        if pm == "BLWIDE":
             log10_A_bn = parameter.Uniform(-20, -11)
             gamma_bn = parameter.Uniform(0, 14)
             band_components = 30
@@ -650,7 +622,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
                                         selection=high_freq, name='high_band_noise')
             s += bnh
 
-        if pm == "BHWIDE" or ( pm == "BH" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+        if pm == "BHWIDE":
             log10_A_bn = parameter.Uniform(-20, -11)
             gamma_bn = parameter.Uniform(0, 14)
             band_components = 30
@@ -661,12 +633,10 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
 
     if not "pm_wn_no_equad" in noise:
         efac = parameter.Uniform(0.1,5)
-        if "t2equad" or "tnequad" in wnmodels:
+        if "t2equad" in wnmodels:
             equad = parameter.Uniform(-10,-1)
-            ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
+            ef = white_signals.MeasurementNoise(efac=efac,log10_t2equad=equad, selection=selection)
             s += ef
-            eq = white_signals.TNEquadNoise(log10_tnequad=equad, selection=selection)
-            s += eq
         else:
             ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
             s += ef

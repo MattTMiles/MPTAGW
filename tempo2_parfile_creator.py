@@ -7,11 +7,11 @@ import numpy as np
 pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
 partim = "/fred/oz002/users/mmiles/MPTA_GW/partim_noise_input"
 noise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models"
-
+#noise_dir
 os.chdir(partim)
 
 for pulsar in open(pulsar_list).readlines():
-    
+#for pulsar in ["J1614-2230"]:
     pulsar = pulsar.strip("\n")
     print(pulsar)
 
