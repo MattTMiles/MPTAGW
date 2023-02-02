@@ -47,7 +47,7 @@ parser.add_argument("-partim", dest="partim", help="Par and tim files for the pu
 parser.add_argument("-results", dest="results", help=r"Name of directory created in the default out directory. Will be of the form {pulsar}_{results}", required = True)
 parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisefile used for the noise analysis.", required = False)
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search", help="The noise parameters to search over. Timing model is default. Include as '-noise_search noise1 noise2 noise3' etc. The _c variations of the noise redirects the noise to the constant noisefile values", \
-    choices={"efac", "equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx", "dm_c", "gw", "gw_const_gamma","gw_const_gamma_wide", "lin_exp_gw_const_gamma_wide", "gw_c", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
+    choices={"efac", "equad", "t2_equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx", "dm_c", "gw", "gw_const_gamma","gw_const_gamma_wide", "lin_exp_gw_const_gamma_wide", "gw_c", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
         "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "spgw", "spgwc", "spgwc_18", "pm_wn", "pm_wn_no_equad", "pm_wn_sw","pm_wn_altpar", "pm_wn_no_equad_altpar"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc"}, required=True)
 parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
@@ -92,7 +92,7 @@ psrs = []
 if sse is not None and sse != "" and sse != "None":
     ephemeris = sse
 else:
-    ephemeris = 'DE438' # Static as not using bayesephem
+    ephemeris = 'DE440' # Static as not using bayesephem
 
 for p, t in zip(parfiles, timfiles):
     psr = Pulsar(p, t, ephem=ephemeris)
@@ -194,6 +194,8 @@ if "efac_c" in noise:
     efac = parameter.Constant()
 if "equad" in noise:
     equad = parameter.Uniform(-10,-1) 
+if "t2_equad" in noise:
+    t2_equad = parameter.Uniform(-10,-1) 
 if "equad_c" in noise:
     equad = parameter.Constant()
 if "ecorr" in noise:
@@ -296,18 +298,28 @@ if "band_high_c" in noise:
 
 ## Put together the signal model
 
-tm = gp_signals.TimingModel(use_svd=True)
+tm = gp_signals.MarginalizingTimingModel(use_svd=True)
 
 #tm = timing.timing_block()
 
 s = tm
 
 if "efac" in noise or "efac_c" in noise or "efac_wide" in noise:
-    if "equad" in noise or "equad_c" in noise:
+    if "t2_equad" in noise and "equad" not in noise:
+        ef = white_signals.MeasurementNoise(efac=efac, log10_t2equad=t2_equad, selection=selection)
+        s += ef
+    elif "equad" in noise or "equad_c" in noise:
         ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
         s += ef
-        eq = white_signals.TNEquadNoise(log10_tnequad=equad, selection=selection)
-        s += eq
+
+        if "equad_c" in noise:
+            if pulsar+"_KAT_MKBF_log10_t2equad" in params.keys() or pulsar+"_KAT_MKBF_log10_tnequad" in params.keys():
+                eq = white_signals.TNEquadNoise(log10_tnequad=equad, selection=selection)
+                s += eq
+
+        else:
+            eq = white_signals.TNEquadNoise(log10_tnequad=equad, selection=selection)
+            s += eq
     else:
         ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
         s += ef
@@ -536,10 +548,10 @@ if "spgw" in noise or "spgwc" in noise or "spgwcm" in noise or "spgwc_18" in noi
 
 if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_wn_altpar" in noise or "pm_wn_no_equad_altpar" in noise:
     if not "pm_wn_altpar" in noise and not "pm_wn_no_equad_altpar" in noise:
-        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_active_noise.json"))
+        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_noise_models.json"))
     else:
-        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/partim_investigations_pref_model.json"))
-    wn_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_ALL_NOISE_EQUAD_CHECKED.json"))
+        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_noise_models.json"))
+    wn_json = json.load(open(noisefile))
     keys = list(pmev_json.keys())
     wnkeys = list(wn_json.keys())
     # Get list of models
@@ -830,7 +842,7 @@ elif sampler =="ppc":
         header_dir = "out_ppc"
 
     outDir='/fred/oz002/users/mmiles/MPTA_GW/enterprise/'+header_dir+'/{0}_{1}'.format(pulsar,results_dir)
-    
+    print(outDir)
     try:
         os.mkdir(outDir)
     except:

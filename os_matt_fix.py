@@ -72,7 +72,7 @@ high_freq = selections.Selection(high_frequencies)
 
 psrlist = None
 
-datadir='/fred/oz005/users/rshannon/correct_toas_3/'
+datadir='/fred/oz002/users/mmiles/MPTA_GW/simmed_psrs/'
 
 parfiles=sorted(glob.glob(datadir+'*.par'))
 timfiles=sorted(glob.glob(datadir+'*.tim'))
@@ -92,7 +92,7 @@ for p, t in zip(parfiles,timfiles):
 
 
 
-noisefile='/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/equad_check/MPTA_ALL_NOISE_EQUAD_CHECKED.json'
+noisefile='/fred/oz002/users/mmiles/MPTA_GW/enterprise_old/MPTA_active_noise_models/MPTA_ALL_NOISE_EQUAD_CHECKED.json'
 
 with open(noisefile, 'r') as f:
     noisedict=json.load(f)
@@ -157,18 +157,21 @@ for pulsar in psrs:
     freqs = np.linspace(1/Tspan,30/Tspan,30)
 
     
-    ev_json = json.load(open('/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/equad_check/MPTA_ALL_NOISE_EQUAD_CHECKED.json'))
+    ev_json = json.load(open('/fred/oz002/users/mmiles/MPTA_GW/enterprise_old/MPTA_active_noise_models/MPTA_ALL_NOISE_EQUAD_CHECKED.json'))
     keys = list(ev_json.keys())
     # Get list of models
-    psrmodels = [ psr_model for psr_model in keys if pulsar.name in psr_model ][0].split("_")[1:]
-    
+    try:
+        psrmodels = [ psr_model for psr_model in keys if pulsar.name in psr_model ][0].split("_")[1:]
+    except:
+        pass
+    '''
     if "RN" in psrmodels or "RED" in psrmodels:
         log10_A_red = parameter.Constant()
         gamma_red = parameter.Constant()
         pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
         rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
         s += rn
-    '''
+    
     if "DM" in psrmodels:
         log10_A_dm = parameter.Uniform(-20, -11)
         gamma_dm = parameter.Uniform(0, 7)
@@ -286,7 +289,7 @@ ostat_mono = opt_stat.OptimalStatistic(psrs, pta=pta, orf='monopole',bayesephem=
 #with open('./MPTA_WN_models_2.json', 'r') as f:
 #    ml_params = json.load(f)
 
-with open('/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/equad_check/MPTA_ALL_NOISE_EQUAD_CHECKED.json', "r") as f:
+with open('/fred/oz002/users/mmiles/MPTA_GW/enterprise_old/MPTA_active_noise_models/MPTA_ALL_NOISE_EQUAD_CHECKED.json', "r") as f:
     ml_params = json.load(f)
 
 #ml_params = 

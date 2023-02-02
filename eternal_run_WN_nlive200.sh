@@ -11,7 +11,7 @@ do
     do 
         echo $psr
         #sleep 2s
-        sh /home/mmiles/soft/GW/rerun_noise_live200_megaslurm.sh ${psr};
+        sh /home/mmiles/soft/GW/rerun_noise_live200_WN_megaslurm.sh ${psr};
     done
     sleep 5m    
 done

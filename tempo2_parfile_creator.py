@@ -5,19 +5,20 @@ import glob
 import numpy as np
 
 pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
-partim = "/fred/oz002/users/mmiles/MPTA_GW/partim_noise_input"
-noise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models"
+partim = "/fred/oz002/users/mmiles/MPTA_GW/J1909_test"
+noise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/live_200"
 #noise_dir
 os.chdir(partim)
 
-for pulsar in open(pulsar_list).readlines():
-#for pulsar in ["J1614-2230"]:
+#for pulsar in open(pulsar_list).readlines():
+for pulsar in ["J1909-3744"]:
     pulsar = pulsar.strip("\n")
     print(pulsar)
 
     openpar = open(partim+"/"+pulsar+".par", "a")
 
-    result = bilby.result.read_in_result(glob.glob(noise_dir+"/"+pulsar+"*/*json")[0])
+    #result = bilby.result.read_in_result(glob.glob(noise_dir+"/"+pulsar+"*/*json")[0])
+    result = bilby.result.read_in_result(glob.glob(noise_dir+"/"+pulsar+"/"+pulsar+"_DM/*json")[0])
     
     for par in result.parameter_labels:
         print(par)
@@ -29,7 +30,7 @@ for pulsar in open(pulsar_list).readlines():
             tn_ecorr = (10**(ent_ecorr))*1e6
             openpar.write("TNECORR -f KAT_MKBF {} \n".format(tn_ecorr))
         
-        if pulsar+"_KAT_MKBF_log10_t2equad" in par:
+        if pulsar+"_KAT_MKBF_log10_tnequad" in par:
             openpar.write("TNGlobalEQ {} \n".format(result.get_one_dimensional_median_and_error_bar(par).median))
         
         if pulsar+"_dm_gp_log10_A" in par:

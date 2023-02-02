@@ -21,22 +21,22 @@ alt_dir = str(args.alt_dir)
 
 #pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list.txt"
 top_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise"
-enterprise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc"
-live_200_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/live_200"
+enterprise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/live_200"
+#live_200_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/live_200"
 ecorr_maybe = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/extra_ecorr"
 
 # This is a list of pulsars that are identified as having a wider preferrred spectral or chromatic indices
-wide_checks = ["J1012-4235","J1125-6014","J1435-6100","J1705-1903","J1708-3506","J1730-2304","J1747-4036","J1802-2124","J1911-1114","J2145-0750","J2234+0944"]
-
+#wide_checks = ["J1012-4235","J1125-6014","J1435-6100","J1705-1903","J1708-3506","J1730-2304","J1747-4036","J1802-2124","J1911-1114","J2145-0750","J2234+0944"]
+wide_checks = []
 # This is a list of pulsars that probably should be favoured for ECORR
-ecorr_checks = ["J1231-1411","J1327-0755","J1455-3330","J1514-4946","J1804-2717","J2124-3358"]
-
+#ecorr_checks = ["J1231-1411","J1327-0755","J1455-3330","J1514-4946","J1804-2717","J2124-3358"]
+ecorr_checks = []
 # This is a list of pulsars that have been reassessed in the live_200 directory
-redo_200 = ["J1614-2230"]
-
+#redo_200 = ["J1614-2230"]
+redo_200 = []
 # This is a list of pulsars that have been reassessed in the live_200 directory including the WN parameters
-redo_200_wn = ["J1614-2230"]
-
+#redo_200_wn = ["J1614-2230"]
+redo_200_wn = []
 all_evidence= {}
 
 chosen_evidence = {}
@@ -64,7 +64,7 @@ if alt_dir == "None" or alt_dir == "":
 
         #Evaluate the top tier
         try:
-            res_RN_DM_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BL_BH_CHROM/*json")[0]).log_evidence
+            res_RN_DM_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL_BH_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BL_BH_CHROM")
             res_RN_DM_BL_BH_CHROM = 0
@@ -94,7 +94,7 @@ if alt_dir == "None" or alt_dir == "":
         ev_V = {}
         
         try:
-            res_RN_DM_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BL_BH_CHROMCIDX/*json")[0]).log_evidence
+            res_RN_DM_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL_BH_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BL_BH_CHROMCIDX")
             res_RN_DM_BL_BH_CHROMCIDX = 0
@@ -123,64 +123,64 @@ if alt_dir == "None" or alt_dir == "":
 
         if list(T_five_sort.values())[0] + 4 > list(choice.values())[0]:
             choice.popitem()
-            choice[list(T_four_sort.keys())[0]] = list(T_four_sort.values())[0]
+            choice[list(T_five_sort.keys())[0]] = list(T_five_sort.values())[0]
 
 
         # Go through Tier 4 and choose the best
         try:
-            res_RN_DM_BL_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BL_BH/*json")[0]).log_evidence
+            res_RN_DM_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL_BH/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BL_BH")
             res_RN_DM_BL_BH = 0
         if pulsar not in redo_200:
             try: 
-                res_RN_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_BL_BH_CHROM/*json")[0]).log_evidence
+                res_RN_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_BH_CHROM/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_BH_CHROM")
                 res_RN_BL_BH_CHROM = 0
             try:
-                res_RN_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_BL_BH_CHROMCIDX/*json")[0]).log_evidence
+                res_RN_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_BH_CHROMCIDX/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_BH_CHROMCIDX")
                 res_RN_BL_BH_CHROMCIDX = 0
         else:
             try: 
-                res_RN_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_BL_BH_CHROM/*json")[0]).log_evidence
+                res_RN_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_BH_CHROM/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_BH_CHROM")
                 res_RN_BL_BH_CHROM = 0
             try:
-                res_RN_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_BL_BH_CHROMCIDX/*json")[0]).log_evidence
+                res_RN_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_BH_CHROMCIDX/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_BH_CHROMCIDX")
                 res_RN_BL_BH_CHROMCIDX = 0
         try:
-            res_DM_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BL_BH_CHROM/*json")[0]).log_evidence
+            res_DM_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BL_BH_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BL_BH_CHROM")
             res_DM_BL_BH_CHROM = 0
         try:
-            res_RN_DM_BL_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BL_CHROM/*json")[0]).log_evidence
+            res_RN_DM_BL_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BL_CHROM")
             res_RN_DM_BL_CHROM = 0
         try:
-            res_RN_DM_BH_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BH_CHROM/*json")[0]).log_evidence
+            res_RN_DM_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BH_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BH_CHROM")
             res_RN_DM_BH_CHROM = 0
         try:
-            res_DM_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BL_BH_CHROMCIDX/*json")[0]).log_evidence
+            res_DM_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BL_BH_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BL_BH_CHROMCIDX")
             res_DM_BL_BH_CHROMCIDX = 0
         try:        
-            res_RN_DM_BL_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BL_CHROMCIDX/*json")[0]).log_evidence
+            res_RN_DM_BL_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BL_CHROMCIDX")
             res_RN_DM_BL_CHROMCIDX = 0
         try:    
-            res_RN_DM_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BH_CHROMCIDX/*json")[0]).log_evidence
+            res_RN_DM_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BH_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BH_CHROMCIDX")
             res_RN_DM_BH_CHROMCIDX = 0
@@ -270,49 +270,49 @@ if alt_dir == "None" or alt_dir == "":
         
         # Go through Tier 3 and choose the best
         try:
-            res_RN_DM_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RED_DM_CHROM/*json")[0]).log_evidence
+            res_RN_DM_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_CHROM")
             res_RN_DM_CHROM = 0
         if pulsar not in redo_200:
             try:
-                res_RN_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_BL_BH/*json")[0]).log_evidence
+                res_RN_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_BH/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_BH")
                 res_RN_BL_BH = 0
             try:
-                res_RN_BL_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_BL_CHROM/*json")[0]).log_evidence
+                res_RN_BL_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_CHROM/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_CHROM")
                 res_RN_BL_CHROM = 0
             try:
-                res_RN_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_BH_CHROM/*json")[0]).log_evidence
+                res_RN_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BH_CHROM/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BH_CHROM")
                 res_RN_BH_CHROM = 0
             try:
-                res_RN_BL_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_BL_CHROMCIDX/*json")[0]).log_evidence
+                res_RN_BL_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_CHROMCIDX/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_CHROMCIDX")
                 res_RN_BL_CHROMCIDX = 0
             try:
-                res_RN_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_BH_CHROMCIDX/*json")[0]).log_evidence
+                res_RN_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BH_CHROMCIDX/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BH_CHROMCIDX")
                 res_RN_BH_CHROMCIDX = 0
             try:
-                res_CHROM_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROM_BL_BH/*json")[0]).log_evidence
+                res_CHROM_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROM_BL_BH/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROM_BL_BH")
                 res_CHROM_BL_BH = 0
             try:
-                res_CHROMCIDX_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROMCIDX_BL_BH/*json")[0]).log_evidence
+                res_CHROMCIDX_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROMCIDX_BL_BH/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROMCIDX_BL_BH")
                 res_CHROMCIDX_BL_BH = 0
         else:
             try:
-                res_RN_BL_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_BL_BH/*json")[0]).log_evidence
+                res_RN_BL_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"/"+pulsar+"_RN_BL_BH/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_BL_BH")
                 res_RN_BL_BH = 0
@@ -347,49 +347,49 @@ if alt_dir == "None" or alt_dir == "":
                 print(pulsar+" does not have: "+pulsar+"_CHROMCIDX_BL_BH")
                 res_CHROMCIDX_BL_BH = 0
         try:   
-            res_DM_BL_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BL_BH/*json")[0]).log_evidence
+            res_DM_BL_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BL_BH/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BL_BH")
             res_DM_BL_BH = 0
         try:
-            res_RN_DM_BL = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BL/*json")[0]).log_evidence
+            res_RN_DM_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BL")
             res_RN_DM_BL = 0
         try:
-            res_RN_DM_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_BH/*json")[0]).log_evidence
+            res_RN_DM_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BH/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BH")
             res_RN_DM_BH = 0
         try:
-            res_DM_BL_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BL_CHROM/*json")[0]).log_evidence
+            res_DM_BL_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BL_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BL_CHROM")
             res_DM_BL_CHROM = 0
         try:
-            res_DM_BH_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BH_CHROM/*json")[0]).log_evidence
+            res_DM_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BH_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BH_CHROM")
             res_DM_BH_CHROM = 0
         try:
-            res_RN_DM_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_DM_CHROMCIDX/*json")[0]).log_evidence
+            res_RN_DM_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_CHROMCIDX")
             res_RN_DM_CHROMCIDX = 0
         try:
-            res_DM_BL_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BL_CHROMCIDX/*json")[0]).log_evidence
+            res_DM_BL_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BL_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BL_CHROMCIDX")
             res_DM_BL_CHROMCIDX = 0
         try:
-            res_DM_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BH_CHROMCIDX/*json")[0]).log_evidence
+            res_DM_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BH_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BH_CHROMCIDX")
             res_DM_BH_CHROMCIDX = 0
         
         if pulsar in ecorr_checks:
             try:
-                res_RN_DM_CHROM_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RED_DM_CHROM/*json")[0]).log_evidence
+                res_RN_DM_CHROM_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RN_DM_CHROM/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_DM_CHROM_ecorr")
                 res_RN_DM_CHROM_ecorr = 0
@@ -521,66 +521,66 @@ if alt_dir == "None" or alt_dir == "":
         # Same for Tier 2
 
         try:
-            res_RN_DM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RED_DM/*json")[0]).log_evidence
+            res_RN_DM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM/*json")[0]).log_evidence
         except:
-            print(pulsar+" does not have: "+pulsar+"_RED_DM")
+            print(pulsar+" does not have: "+pulsar+"_RN_DM")
             res_RN_DM = 0
         if pulsar not in redo_200:
             try:
-                res_RN_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RED_CHROM/*json")[0]).log_evidence
+                res_RN_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_CHROM/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_CHROM")
+                print(pulsar+" does not have: "+pulsar+"_RN_CHROM")
                 res_RN_CHROM = 0
             try:
-                res_RN_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RED_BL/*json")[0]).log_evidence
+                res_RN_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BL/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_BL")
+                print(pulsar+" does not have: "+pulsar+"_RN_BL")
                 res_RN_BL = 0  
             try:
-                res_RN_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RED_BH/*json")[0]).log_evidence
+                res_RN_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_BH/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_BH")
+                print(pulsar+" does not have: "+pulsar+"_RN_BH")
                 res_RN_BH = 0
             try:
-                res_RN_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN_CHROMCIDX/*json")[0]).log_evidence
+                res_RN_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_CHROMCIDX/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN_CHROMCIDX")
                 res_RN_CHROMCIDX = 0 
             try:
-                res_CHROM_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROM_BL/*json")[0]).log_evidence
+                res_CHROM_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROM_BL/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROM_BL")
                 res_CHROM_BL = 0 
             try:
-                res_CHROM_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROM_BH/*json")[0]).log_evidence
+                res_CHROM_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROM_BH/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROM_BH")
                 res_CHROM_BH = 0 
             try:
-                res_CHROMCIDX_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROMCIDX_BL/*json")[0]).log_evidence
+                res_CHROMCIDX_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROMCIDX_BL/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROMCIDX_BL")
                 res_CHROMCIDX_BL = 0 
             try:
-                res_CHROMCIDX_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROMCIDX_BH/*json")[0]).log_evidence
+                res_CHROMCIDX_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROMCIDX_BH/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROMCIDX_BH")
                 res_CHROMCIDX_BH = 0 
         else:
             try:
-                res_RN_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RED_CHROM/*json")[0]).log_evidence
+                res_RN_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_CHROM/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_CHROM")
+                print(pulsar+" does not have: "+pulsar+"_RN_CHROM")
                 res_RN_CHROM = 0
             try:
-                res_RN_BL = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RED_BL/*json")[0]).log_evidence
+                res_RN_BL = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_BL/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_BL")
+                print(pulsar+" does not have: "+pulsar+"_RN_BL")
                 res_RN_BL = 0  
             try:
-                res_RN_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RED_BH/*json")[0]).log_evidence
+                res_RN_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_BH/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_BH")
+                print(pulsar+" does not have: "+pulsar+"_RN_BH")
                 res_RN_BH = 0 
             try:
                 res_RN_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_RN_CHROMCIDX/*json")[0]).log_evidence
@@ -608,41 +608,41 @@ if alt_dir == "None" or alt_dir == "":
                 print(pulsar+" does not have: "+pulsar+"_CHROMCIDX_BH")
                 res_CHROMCIDX_BH = 0 
         try:
-            res_DM_CHROM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_CHROM/*json")[0]).log_evidence
+            res_DM_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_CHROM")
             res_DM_CHROM = 0  
         try:
-            res_DM_BL = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BL/*json")[0]).log_evidence
+            res_DM_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BL/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BL")
             res_DM_BL = 0 
         try:
-            res_DM_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_BH/*json")[0]).log_evidence
+            res_DM_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_BH/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_BH")
             res_DM_BH = 0 
         try:
-            res_DM_CHROMCIDX = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM_CHROMCIDX/*json")[0]).log_evidence
+            res_DM_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM_CHROMCIDX/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM_CHROMCIDX")
             res_DM_CHROMCIDX = 0 
         try:
-            res_BH_BL = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_BH_BL/*json")[0]).log_evidence
+            res_BH_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_BH_BL/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_BH_BL")
             res_BH_BL = 0
         
         if pulsar in ecorr_checks:
             try:
-                res_RN_DM_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RED_DM/*json")[0]).log_evidence
+                res_RN_DM_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RN_DM/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_DM_ecorr")
+                print(pulsar+" does not have: "+pulsar+"_RN_DM_ecorr")
                 res_RN_DM_ecorr = 0
             try:
-                res_RN_CHROM_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RED_CHROM/*json")[0]).log_evidence
+                res_RN_CHROM_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RN_CHROM/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_CHROM_ecorr")
+                print(pulsar+" does not have: "+pulsar+"_RN_CHROM_ecorr")
                 res_RN_CHROM_ecorr = 0
             try:
                 res_DM_CHROM_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_DM_CHROM/*json")[0]).log_evidence
@@ -650,14 +650,14 @@ if alt_dir == "None" or alt_dir == "":
                 print(pulsar+" does not have: "+pulsar+"_DM_CHROM_ecorr")
                 res_DM_CHROM_ecorr = 0  
             try:
-                res_RN_BL_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RED_BL/*json")[0]).log_evidence
+                res_RN_BL_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RN_BL/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_BL_ecorr")
+                print(pulsar+" does not have: "+pulsar+"_RN_BL_ecorr")
                 res_RN_BL_ecorr = 0  
             try:
-                res_RN_BH_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RED_BH/*json")[0]).log_evidence
+                res_RN_BH_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_RN_BH/*json")[0]).log_evidence
             except:
-                print(pulsar+" does not have: "+pulsar+"_RED_BH_ecorr")
+                print(pulsar+" does not have: "+pulsar+"_RN_BH_ecorr")
                 res_RN_BH_ecorr = 0 
             try:
                 res_DM_BL_ecorr = bilby.result.read_in_result(glob.glob(ecorr_maybe+"/"+pulsar+"_DM_BL/*json")[0]).log_evidence
@@ -776,17 +776,17 @@ if alt_dir == "None" or alt_dir == "":
         # Same for Tier 1
         if pulsar not in redo_200:
             try:
-                res_RN = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_RN/*json")[0]).log_evidence
+                res_RN = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_RN")
                 res_RN = 0
             try:
-                res_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROM/*json")[0]).log_evidence
+                res_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROM/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROM")
                 res_CHROM = 0
             try:
-                res_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_CHROMCIDX/*json")[0]).log_evidence
+                res_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_CHROMCIDX/*json")[0]).log_evidence
             except:
                 print(pulsar+" does not have: "+pulsar+"_CHROMCIDX")
                 res_CHROMCIDX = 0
@@ -807,17 +807,17 @@ if alt_dir == "None" or alt_dir == "":
                 print(pulsar+" does not have: "+pulsar+"_CHROMCIDX")
                 res_CHROMCIDX = 0
         try:
-            res_DM = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_DM/*json")[0]).log_evidence
+            res_DM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_DM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_DM")
             res_DM = 0
         try:
-            res_BH = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_BH/*json")[0]).log_evidence
+            res_BH = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_BH/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_BH")
             res_BH = 0
         try:
-            res_BL = bilby.result.read_in_result(glob.glob(live_200_dir+"/"+pulsar+"_BL/*json")[0]).log_evidence
+            res_BL = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_BL/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_BL")
             res_BL = 0
@@ -903,14 +903,14 @@ if alt_dir == "None" or alt_dir == "":
         if pulsar not in redo_200_wn:
 
             try:
-                res_WN = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_WN/*json")[0]).log_evidence
-                ml_WN = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_WN/*json")[0]).log_likelihood_evaluations.max()
+                res_WN = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_WN/*json")[0]).log_evidence
+                ml_WN = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_WN/*json")[0]).log_likelihood_evaluations.max()
             except:
                 print(pulsar+" does not have: "+pulsar+"_WN")
                 res_WN = 0
             try:
-                res_WN_NO_ECORR = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_WN_NO_ECORR/*json")[0]).log_evidence
-                ml_WN_NO_ECORR = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"_WN_NO_ECORR/*json")[0]).log_likelihood_evaluations.max()
+                res_WN_NO_ECORR = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_WN_NO_ECORR/*json")[0]).log_evidence
+                ml_WN_NO_ECORR = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_WN_NO_ECORR/*json")[0]).log_likelihood_evaluations.max()
             except:
                 print(pulsar+" does not have: "+pulsar+"_WN_NO_ECORR")
                 res_WN_NO_ECORR = 0
@@ -1103,12 +1103,12 @@ elif alt_dir is not None and alt_dir != "":
         
         # Go through Tier 3 and choose the best
         try:
-            res_RN_DM_CHROM = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RED_DM_CHROM/*json")[0]).log_evidence
+            res_RN_DM_CHROM = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_DM_CHROM/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_CHROM")
             res_RN_DM_CHROM = 0
         try:
-            res_RN_DM_CHROM_WIDE = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RED_DM_CHROM_WIDE/*json")[0]).log_evidence
+            res_RN_DM_CHROM_WIDE = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_DM_CHROM_WIDE/*json")[0]).log_evidence
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_CHROM_WIDE")
             res_RN_DM_CHROM_WIDE = 0
@@ -1261,31 +1261,31 @@ elif alt_dir is not None and alt_dir != "":
         # Same for Tier 2
 
         try:
-            res_RN_DM = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RED_DM/*json")[0]).log_evidence
+            res_RN_DM = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_DM/*json")[0]).log_evidence
         except:
-            print(pulsar+" does not have: "+pulsar+"_RED_DM")
+            print(pulsar+" does not have: "+pulsar+"_RN_DM")
             res_RN_DM = 0
 
         try:
-            res_RN_CHROM = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RED_CHROM/*json")[0]).log_evidence
+            res_RN_CHROM = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_CHROM/*json")[0]).log_evidence
         except:
-            print(pulsar+" does not have: "+pulsar+"_RED_CHROM")
+            print(pulsar+" does not have: "+pulsar+"_RN_CHROM")
             res_RN_CHROM = 0
         try:
-            res_RN_CHROM_WIDE = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RED_CHROM_WIDE/*json")[0]).log_evidence
+            res_RN_CHROM_WIDE = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_CHROM_WIDE/*json")[0]).log_evidence
         except:
-            print(pulsar+" does not have: "+pulsar+"_RED_CHROM_WIDE")
+            print(pulsar+" does not have: "+pulsar+"_RN_CHROM_WIDE")
             res_RN_CHROM_WIDE = 0
 
         try:
-            res_RN_BL = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RED_BL/*json")[0]).log_evidence
+            res_RN_BL = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_BL/*json")[0]).log_evidence
         except:
-            print(pulsar+" does not have: "+pulsar+"_RED_BL")
+            print(pulsar+" does not have: "+pulsar+"_RN_BL")
             res_RN_BL = 0  
         try:
-            res_RN_BH = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RED_BH/*json")[0]).log_evidence
+            res_RN_BH = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_BH/*json")[0]).log_evidence
         except:
-            print(pulsar+" does not have: "+pulsar+"_RED_BH")
+            print(pulsar+" does not have: "+pulsar+"_RN_BH")
             res_RN_BH = 0
         try:
             res_RN_CHROMCIDX = bilby.result.read_in_result(glob.glob(alt_dir+"/"+pulsar+"_RN_CHROMCIDX/*json")[0]).log_evidence

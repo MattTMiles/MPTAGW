@@ -50,7 +50,7 @@ parser.add_argument("-results", dest="results", help=r"Name of directory created
 parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisefile used for the noise analysis.", required = False)
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search", help="The noise parameters to search over. Timing model is default. Include as '-noise_search noise1 noise2 noise3' etc. The _c variations of the noise redirects the noise to the constant noisefile values", \
     choices={"efac", "equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx", "dm_c", "gw", "gw_const_gamma", "gw_c", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
-        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "spgw", "spgwc", "spgwc_18", "pm_wn", "pm_wn_no_equad", "pm_wn_sw", "tm"})
+        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "tm", "tm_linear"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc"}, required=True)
 parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
 parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
@@ -134,11 +134,16 @@ def pta_split(freqs, backend_flags):
     d.update(temp)
     return d
 
+def by_from(flags):
+    flagvals = np.unique(flags["from"])
+    return {val: flags["from"] == val for val in flagvals}
+
 
 #ecorr_selection = selections.Selection(pta_split)
 ecorr_selection = selections.Selection(selections.by_backend)
 #ecor_selection = pta_split
-selection = selections.Selection(selections.by_backend)
+#selection = selections.Selection(selections.by_backend)
+selection = selections.Selection(by_from)
 
 def dm_noise(log10_A,gamma,Tspan,components=30,option="powerlaw"):
     """
@@ -275,8 +280,7 @@ if "band_high_c" in noise:
 
 ## Put together the signal model
 
-#tm = gp_signals.TimingModel(use_svd=True)
-if "tm" in noise:
+if "tm_linear" in noise:
     psr.tmparams_orig = OrderedDict.fromkeys(psr.t2pulsar.pars())
     for key in psr.tmparams_orig:
 
@@ -290,11 +294,24 @@ if "tm" in noise:
     print(psr.tmparams_orig.keys())
     tm = timing.timing_block(tmparam_list=psr.tmparams_orig.keys(), linear=True)
 
+elif "tm" in noise and "tm_linear" not in noise:
+    psr.tmparams_orig = OrderedDict.fromkeys(psr.t2pulsar.pars())
+    for key in psr.tmparams_orig:
 
-    s = tm
+        val = psr.t2pulsar[key].val
+        err = psr.t2pulsar[key].err
+        psr.tmparams_orig[key] = (val, err)
+        if err == 0:
+            raise("No error found!")
+    print(psr.tmparams_orig)
+    print("Varying:")
+    print(psr.tmparams_orig.keys())
+    tm = timing.timing_block(tmparam_list=psr.tmparams_orig.keys(), sigma=40, linear=False)
+
 else:
     tm = gp_signals.MarginalizingTimingModel(use_svd=True)
-    s = tm
+
+s = tm
 
 if "efac" in noise or "efac_c" in noise or "efac_wide" in noise:
     if "equad" in noise or "equad_c" in noise:
@@ -376,310 +393,6 @@ if "band_high"in noise or "band_high_wide" in noise or "band_high_c" in noise:
                                 selection=high_freq, name='high_band_noise')
     s += bnh
 
-if "spgw" in noise or "spgwc" in noise or "spgwcm" in noise or "spgwc_18" in noise:
-    ev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_active_noise.json"))
-    keys = list(ev_json.keys())
-    # Get list of models
-    psrmodels = [ psr_model for psr_model in keys if pulsar in psr_model ][0].split("_")[1:]
-    
-    for pm in psrmodels:
-
-        if pm == "RN" or pm == "RED":
-            log10_A_red = parameter.Uniform(-20, -11)
-            gamma_red = parameter.Uniform(0, 7)
-            pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
-            rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
-            s += rn
-
-        if pm == "RNWIDE":
-            log10_A_red = parameter.Uniform(-20, -11)
-            gamma_red = parameter.Uniform(0, 14)
-            pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
-            rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
-            s += rn
-
-        if pm =="DM":
-            log10_A_dm = parameter.Uniform(-20, -11)
-            gamma_dm = parameter.Uniform(0, 7)
-            dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
-            s += dm
-        
-        if pm == "DMWIDE":
-            log10_A_dm = parameter.Uniform(-20, -11)
-            gamma_dm = parameter.Uniform(0, 14)
-            dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
-            s += dm
-
-        if pm == "CHROM":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 7)
-            chrom_gp_idx = parameter.Uniform(0,7)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "CHROMWIDE":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 14)
-            chrom_gp_idx = parameter.Uniform(0,14)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "CHROMCIDX":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 7)
-            chrom_gp_idx = parameter.Constant(4)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "CHROMCIDXWIDE":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 14)
-            chrom_gp_idx = parameter.Constant(4)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "BL":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 7)
-            band_components = 30
-            bpl = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnl = gp_signals.FourierBasisGP(bpl, components=band_components,
-                                        selection=low_freq, name='low_band_noise')
-            s += bnl
-
-        if pm == "BLWIDE":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 14)
-            band_components = 30
-            bpl = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnl = gp_signals.FourierBasisGP(bpl, components=band_components,
-                                        selection=low_freq, name='low_band_noise')
-            s += bnl
-
-        if pm == "BH":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 7)
-            band_components = 30
-            bph = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnh = gp_signals.FourierBasisGP(bph, components=band_components,
-                                        selection=high_freq, name='high_band_noise')
-            s += bnh
-
-        if pm == "BHWIDE":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 14)
-            band_components = 30
-            bph = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnh = gp_signals.FourierBasisGP(bph, components=band_components,
-                                        selection=high_freq, name='high_band_noise')
-            s += bnh
-
-    if "spgwc" in noise:
-        log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
-        gamma_gw = parameter.Constant(4.33)('gamma_gw')
-
-    #This is a place holder for a quick monopole check, this is not finished, activating it won't do anything
-    elif "spgwcm" in noise:
-        log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
-        gamma_gw = parameter.Constant(4.33)('gamma_gw')
-
-    elif "spgwc_18" in noise:
-        log10_A_gw = parameter.Uniform(-18,-17.8)('log10_A_gw')
-        gamma_gw = parameter.Constant(4.33)('gamma_gw')
-    else:
-        log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
-        gamma_gw = parameter.Uniform(0,7)('gamma_gw')
-
-    gpl = utils.powerlaw(log10_A=log10_A_gw, gamma=gamma_gw)
-    gw = gp_signals.FourierBasisGP(spectrum=gpl, components=30, Tspan=Tspan, name='gwb')
-    s += gw
-
-if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise:
-    pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_active_noise.json"))
-    wn_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_ALL_NOISE_EQUAD_CHECKED.json"))
-    keys = list(pmev_json.keys())
-    wnkeys = list(wn_json.keys())
-    # Get list of models
-    psrmodels = [ psr_model for psr_model in keys if pulsar in psr_model ][0].split("_")[1:]
-    wnmodels = [ wn_model.split("_")[-1] for wn_model in wnkeys if pulsar in wn_model ]
-    # Check through the possibilities and add them as appropriate
-
-    for pm in psrmodels:
-
-        if pm == "RN" or pm == "RED":
-            log10_A_red = parameter.Uniform(-20, -11)
-            gamma_red = parameter.Uniform(0, 7)
-            pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
-            rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
-            s += rn
-
-        if pm == "RNWIDE":
-            log10_A_red = parameter.Uniform(-20, -11)
-            gamma_red = parameter.Uniform(0, 14)
-            pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
-            rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
-            s += rn
-
-        if pm =="DM":
-            log10_A_dm = parameter.Uniform(-20, -11)
-            gamma_dm = parameter.Uniform(0, 7)
-            dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
-            s += dm
-        
-        if pm == "DMWIDE":
-            log10_A_dm = parameter.Uniform(-20, -11)
-            gamma_dm = parameter.Uniform(0, 14)
-            dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
-            s += dm
-
-        if pm == "CHROM":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 7)
-            chrom_gp_idx = parameter.Uniform(0,7)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "CHROMWIDE":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 14)
-            chrom_gp_idx = parameter.Uniform(0,14)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "CHROMCIDX":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 7)
-            chrom_gp_idx = parameter.Constant(4)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "CHROMCIDXWIDE":
-            log10_A_chrom_prior = parameter.Uniform(-20, -11)
-            gamma_chrom_prior = parameter.Uniform(0, 14)
-            chrom_gp_idx = parameter.Constant(4)
-            chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
-            idx = chrom_gp_idx
-            components = 30
-            chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
-                                                                    idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
-            s += chrom
-
-        if pm == "BL":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 7)
-            band_components = 30
-            bpl = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnl = gp_signals.FourierBasisGP(bpl, components=band_components,
-                                        selection=low_freq, name='low_band_noise')
-            s += bnl
-
-        if pm == "BLWIDE":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 14)
-            band_components = 30
-            bpl = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnl = gp_signals.FourierBasisGP(bpl, components=band_components,
-                                        selection=low_freq, name='low_band_noise')
-            s += bnl
-
-        if pm == "BH":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 7)
-            band_components = 30
-            bph = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnh = gp_signals.FourierBasisGP(bph, components=band_components,
-                                        selection=high_freq, name='high_band_noise')
-            s += bnh
-
-        if pm == "BHWIDE":
-            log10_A_bn = parameter.Uniform(-20, -11)
-            gamma_bn = parameter.Uniform(0, 14)
-            band_components = 30
-            bph = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-            bnh = gp_signals.FourierBasisGP(bph, components=band_components,
-                                        selection=high_freq, name='high_band_noise')
-            s += bnh
-
-    if not "pm_wn_no_equad" in noise:
-        efac = parameter.Uniform(0.1,5)
-        if "t2equad" in wnmodels:
-            equad = parameter.Uniform(-10,-1)
-            ef = white_signals.MeasurementNoise(efac=efac,log10_t2equad=equad, selection=selection)
-            s += ef
-        else:
-            ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
-            s += ef
-
-        if "ecorr" in wnmodels:
-            ecorr = parameter.Uniform(-10,-1)
-            ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=selection)
-            s += ec
-        
-    elif "pm_wn_no_equad" in noise:
-        efac = parameter.Uniform(0.1,5)
-        ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
-        s += ef
-
-        if "ecorr" in wnmodels:
-            ecorr = parameter.Uniform(-10,-1)
-            ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=selection)
-            s += ec
-
-    if "pm_wn_sw" in noise:
-
-        n_earth = parameter.Uniform(0, 20)
-        deter_sw = solar_wind(n_earth=n_earth)
-        mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
-
-        Tspan = psr.toas.max() - psr.toas.min()
-        max_cadence = 60
-        sw_components = int(Tspan / (max_cadence*86400))
-
-        log10_A_sw = parameter.Uniform(-10, 1)
-        gamma_sw = parameter.Uniform(-4, 4)
-        sw_prior = utils.powerlaw(log10_A=log10_A_sw, gamma=gamma_sw)
-        sw_basis = createfourierdesignmatrix_solar_dm(nmodes=sw_components, Tspan=Tspan)
-
-        sw = mean_sw + gp_signals.BasisGP(sw_prior, sw_basis, name='gp_sw')
-
-        s += sw
-
 
 models = []
         
@@ -753,7 +466,7 @@ if sampler == "bilby":
     results.plot_corner()
 
 elif sampler =="ptmcmc":
-    if custom_results is not None and custom_results != "":
+    if custom_results is not None and custom_results != "" and custom_results != "None":
         header_dir = custom_results
     else:
         header_dir = "out_ptmcmc"
@@ -788,7 +501,7 @@ elif sampler =="ptmcmc":
     sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, 
                     outDir=outDir, resume=True)
 
-    N = int(1e6)  # This will have to be played around with a bit
+    N = int(5e6)  # This will have to be played around with a bit
     x0 = np.hstack([p.sample() for p in pta.params])
     sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50, )
 
