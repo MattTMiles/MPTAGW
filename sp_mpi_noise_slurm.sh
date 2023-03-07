@@ -14,15 +14,15 @@ conda activate gw
 
 cd /fred/oz002/users/mmiles/MPTA_GW/enterprise
 
-touch "${1}_RED_DM_CHROMSPLIT"
+touch "${1}_PM_WN_SW_REMOVE_DM"
 
-echo "${1}_RED_DM_CHROMSPLIT"
+echo "${1}_PM_WN_SW_REMOVE_DM"
 
-mpirun python /home/mmiles/soft/GW/enterprise_run.py -pulsar $1 -results RED_DM_CHROMSPLIT -noise_search efac_c ecorr_c equad_c red dm chromsplit -sampler ppc -partim /fred/oz002/users/mmiles/MPTA_GW/partim_investigations -noisefile /fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_WN_models.json -nlive 200 -alt_dir out_ppc/live_200
+mpirun python /home/mmiles/soft/GW/enterprise_run.py -pulsar $1 -results PM_WN_SW_REMOVE_DM -noise_search efac ecorr sw -sampler ppc -partim /fred/oz002/users/mmiles/MPTA_GW/partim -noisefile /fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_WN_models.json -nlive 200 -alt_dir out_ppc/PM_WN/$1
 
 cd /fred/oz002/users/mmiles/MPTA_GW/enterprise
 
-rm -f "${1}_RED_DM_CHROMSPLIT"
+rm -f "${1}_PM_WN_SW_REMOVE_DM"
 
 
 echo done

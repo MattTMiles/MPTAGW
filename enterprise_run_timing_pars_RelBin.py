@@ -50,7 +50,7 @@ parser.add_argument("-results", dest="results", help=r"Name of directory created
 parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisefile used for the noise analysis.", required = False)
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search", help="The noise parameters to search over. Timing model is default. Include as '-noise_search noise1 noise2 noise3' etc. The _c variations of the noise redirects the noise to the constant noisefile values", \
     choices={"efac", "equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx", "dm_c", "gw", "gw_const_gamma", "gw_c", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
-        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "tm", "tm_linear"})
+        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "tm", "tm_linear", "tm_high_sig"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc"}, required=True)
 parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
 parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
@@ -294,7 +294,7 @@ if "tm_linear" in noise:
     print(psr.tmparams_orig.keys())
     tm = timing.timing_block(tmparam_list=psr.tmparams_orig.keys(), linear=True)
 
-elif "tm" in noise and "tm_linear" not in noise:
+elif "tm" in noise and "tm_linear" not in noise and "tm_high_sig" not in noise:
     psr.tmparams_orig = OrderedDict.fromkeys(psr.t2pulsar.pars())
     for key in psr.tmparams_orig:
 
@@ -307,6 +307,20 @@ elif "tm" in noise and "tm_linear" not in noise:
     print("Varying:")
     print(psr.tmparams_orig.keys())
     tm = timing.timing_block(tmparam_list=psr.tmparams_orig.keys(), sigma=40, linear=False)
+
+elif "tm_high_sig" in noise:
+    psr.tmparams_orig = OrderedDict.fromkeys(psr.t2pulsar.pars())
+    for key in psr.tmparams_orig:
+
+        val = psr.t2pulsar[key].val
+        err = psr.t2pulsar[key].err
+        psr.tmparams_orig[key] = (val, err)
+        if err == 0:
+            raise("No error found!")
+    print(psr.tmparams_orig)
+    print("Varying:")
+    print(psr.tmparams_orig.keys())
+    tm = timing.timing_block(tmparam_list=psr.tmparams_orig.keys(), sigma=80, linear=False)
 
 else:
     tm = gp_signals.MarginalizingTimingModel(use_svd=True)
