@@ -11,8 +11,10 @@ def binner(pos1, pos2):
         # bins in angsep space
         #bins = np.array([1e-3, 30.0, 50.0, 80.0, 100.0,
         #        120.0, 150.0, 180.0]) * np.pi/180.0
-        bins = np.array([1e-3, 25.714, 51.429, 77.143, 102.85,
-                128.571, 154.289, 180.0]) * np.pi/180.0
+        #bins = np.array([1e-3, 25.714, 51.429, 77.143, 102.85,
+        #        128.571, 154.289, 180.0]) * np.pi/180.0
+        bins = np.array([1e-3, 30, 60, 90, 120,
+                150, 180]) * np.pi/180.0
         angsep = np.arccos(np.dot(pos1, pos2))
         idx = np.digitize(angsep, bins)
         return idx
@@ -49,7 +51,7 @@ for psr1 in psrs:
                     psr2_decj = psr2_dec*np.pi/180
                     psr2_pos = np.array([np.cos(psr2_raj) * np.cos(psr2_decj), np.sin(psr2_raj) * np.cos(psr2_decj), np.sin(psr2_decj)])
                     angbin = binner(psr1_pos,psr2_pos)
-                    pair_bins = open("/fred/oz002/users/mmiles/MPTA_GW/pair_bins_new.txt", "a")
+                    pair_bins = open("/fred/oz002/users/mmiles/MPTA_GW/pair_bins_6.txt", "a")
                     pair_bins.write(psr1+"_"+psr2+" "+str(angbin)+"\n")
                     pair_bins.close()
                     print(psr1+"_"+psr2+" "+str(angbin))

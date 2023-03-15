@@ -41,6 +41,8 @@ all_evidence= {}
 
 chosen_evidence = {}
 
+bf_cutoff = 2.3
+
 os.chdir(top_dir)
 try:
     os.remove(outfile)
@@ -63,6 +65,7 @@ if alt_dir == "None" or alt_dir == "":
         psrdirs = glob.glob("*"+pulsar+"*")
 
         #Evaluate the top tier
+
         try:
             res_RN_DM_BL_BH_CHROM = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL_BH_CHROM/*json")[0]).log_evidence
         except:
@@ -83,8 +86,11 @@ if alt_dir == "None" or alt_dir == "":
                 res_RN_DM_BL_BH_CHROM_ecorr = 0
 
         T_top = {}
-        T_top[pulsar+"_RN_DM_BL_BH_CHROM"] = res_RN_DM_BL_BH_CHROM
-        T_top[pulsar+"_RN_DM_BL_BH_CHROM_WIDE"] = res_RN_DM_BL_BH_CHROM_WIDE
+        #T_top[pulsar+"_RN_DM_BL_BH_CHROM"] = res_RN_DM_BL_BH_CHROM
+        #T_top[pulsar+"_RN_DM_BL_BH_CHROM_WIDE"] = res_RN_DM_BL_BH_CHROM_WIDE
+
+        T_top[pulsar+"_RN_DM_BL_BH_CHROM"] = 0
+        T_top[pulsar+"_RN_DM_BL_BH_CHROM_WIDE"] = 0
         
         if pulsar in ecorr_checks:
             T_top[pulsar+"_RN_DM_BL_BH_CHROM_ecorr"] = res_RN_DM_BL_BH_CHROM_ecorr
@@ -102,6 +108,7 @@ if alt_dir == "None" or alt_dir == "":
         
         try:
             res_RN_DM_BL_BH_CHROMCIDX = bilby.result.read_in_result(glob.glob(enterprise_dir+"/"+pulsar+"/"+pulsar+"_RN_DM_BL_BH_CHROMCIDX/*json")[0]).log_evidence
+         
         except:
             print(pulsar+" does not have: "+pulsar+"_RN_DM_BL_BH_CHROMCIDX")
             res_RN_DM_BL_BH_CHROMCIDX = 0
@@ -121,14 +128,15 @@ if alt_dir == "None" or alt_dir == "":
             ev_V[pulsar+"_RN_DM_BL_BH_CHROM_ecorr"] = res_RN_DM_BL_BH_CHROM_ecorr
 
         T_five = {}
-        T_five[pulsar+"_RN_DM_BL_BH_CHROMCIDX"] = res_RN_DM_BL_BH_CHROMCIDX
+        #T_five[pulsar+"_RN_DM_BL_BH_CHROMCIDX"] = res_RN_DM_BL_BH_CHROMCIDX
+        T_five[pulsar+"_RN_DM_BL_BH_CHROMCIDX"] = 0
         
         if pulsar in ecorr_checks:
             T_five[pulsar+"_RN_DM_BL_BH_CHROMCIDX_ecorr"] = res_RN_DM_BL_BH_CHROMCIDX_ecorr
         
         T_five_sort = dict(sorted(T_five.items(), key=lambda item: item[1],reverse=True))
 
-        if list(T_five_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_five_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_five_sort.keys())[0]] = list(T_five_sort.values())[0]
 
@@ -262,6 +270,7 @@ if alt_dir == "None" or alt_dir == "":
         T_four = {}
         # Putting in half measures to account for the extra term that chromatic noise has which arbitrarily increases the likelihood
         T_four_half = {}
+        '''
         T_four[pulsar+"_RN_DM_BL_BH"] = res_RN_DM_BL_BH
         T_four_half[pulsar+"_RN_BL_BH_CHROM"] = res_RN_BL_BH_CHROM
         T_four_half[pulsar+"_DM_BL_BH_CHROM"] = res_DM_BL_BH_CHROM
@@ -275,6 +284,20 @@ if alt_dir == "None" or alt_dir == "":
         T_four[pulsar+"_DM_BL_BH_CHROMCIDX"] = res_DM_BL_BH_CHROMCIDX
         T_four[pulsar+"_RN_DM_BL_CHROMCIDX"] = res_RN_DM_BL_CHROMCIDX
         T_four[pulsar+"_RN_DM_BH_CHROMCIDX"] = res_RN_DM_BH_CHROMCIDX
+        '''
+        T_four[pulsar+"_RN_DM_BL_BH"] = 0
+        T_four_half[pulsar+"_RN_BL_BH_CHROM"] = 0
+        T_four_half[pulsar+"_DM_BL_BH_CHROM"] = 0
+        T_four_half[pulsar+"_RN_DM_BL_CHROM"] = 0
+        T_four_half[pulsar+"_RN_DM_BH_CHROM"] = 0
+        T_four_half[pulsar+"_RN_BL_BH_CHROM_WIDE"] = 0
+        T_four_half[pulsar+"_DM_BL_BH_CHROM_WIDE"] = 0
+        T_four_half[pulsar+"_RN_DM_BL_CHROM_WIDE"] = 0
+        T_four_half[pulsar+"_RN_DM_BH_CHROM_WIDE"] = 0
+        T_four[pulsar+"_RN_BL_BH_CHROMCIDX"] = 0
+        T_four[pulsar+"_DM_BL_BH_CHROMCIDX"] = 0
+        T_four[pulsar+"_RN_DM_BL_CHROMCIDX"] = 0
+        T_four[pulsar+"_RN_DM_BH_CHROMCIDX"] = 0
 
         if pulsar in ecorr_checks:
             T_four[pulsar+"_RN_DM_BL_BH_ecorr"] = res_RN_DM_BL_BH_ecorr
@@ -291,11 +314,11 @@ if alt_dir == "None" or alt_dir == "":
         T_four_sort = dict(sorted(T_four.items(), key=lambda item: item[1],reverse=True))
         
         # Select out condition to maintain probable model
-        if list(T_four_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_four_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_four_half_sort.keys())[0]] = list(T_four_half_sort.values())[0]
 
-        if list(T_four_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_four_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_four_sort.keys())[0]] = list(T_four_sort.values())[0]
         
@@ -535,6 +558,7 @@ if alt_dir == "None" or alt_dir == "":
         T_three_half = {}
         T_three_half[pulsar+"_RN_DM_CHROM"] = res_RN_DM_CHROM
         T_three_half[pulsar+"_RN_DM_CHROM_WIDE"] = res_RN_DM_CHROM_WIDE
+        '''
         T_three[pulsar+"_RN_BL_BH"] = res_RN_BL_BH
         T_three[pulsar+"_DM_BL_BH"] = res_DM_BL_BH
         T_three[pulsar+"_RN_DM_BL"] = res_RN_DM_BL
@@ -547,7 +571,22 @@ if alt_dir == "None" or alt_dir == "":
         T_three_half[pulsar+"_RN_BH_CHROM_WIDE"] = res_RN_BH_CHROM_WIDE
         T_three_half[pulsar+"_DM_BL_CHROM_WIDE"] = res_DM_BL_CHROM_WIDE
         T_three_half[pulsar+"_DM_BH_CHROM_WIDE"] = res_DM_BH_CHROM_WIDE
+        '''
+        T_three[pulsar+"_RN_BL_BH"] = 0
+        T_three[pulsar+"_DM_BL_BH"] = 0
+        T_three[pulsar+"_RN_DM_BL"] = 0
+        T_three[pulsar+"_RN_DM_BH"] = 0
+        T_three_half[pulsar+"_RN_BL_CHROM"] = 0
+        T_three_half[pulsar+"_RN_BH_CHROM"] = 0
+        T_three_half[pulsar+"_DM_BL_CHROM"] = 0
+        T_three_half[pulsar+"_DM_BH_CHROM"] = 0
+        T_three_half[pulsar+"_RN_BL_CHROM_WIDE"] = 0
+        T_three_half[pulsar+"_RN_BH_CHROM_WIDE"] = 0
+        T_three_half[pulsar+"_DM_BL_CHROM_WIDE"] = 0
+        T_three_half[pulsar+"_DM_BH_CHROM_WIDE"] = 0
+
         T_three[pulsar+"_RN_DM_CHROMCIDX"] = res_RN_DM_CHROMCIDX
+        '''
         T_three[pulsar+"_RN_BL_CHROMCIDX"] = res_RN_BL_CHROMCIDX
         T_three[pulsar+"_RN_BH_CHROMCIDX"] = res_RN_BH_CHROMCIDX
         T_three[pulsar+"_DM_BL_CHROMCIDX"] = res_DM_BL_CHROMCIDX
@@ -555,7 +594,15 @@ if alt_dir == "None" or alt_dir == "":
         T_three_half[pulsar+"_CHROM_BL_BH"] = res_CHROM_BL_BH
         T_three_half[pulsar+"_CHROM_WIDE_BL_BH"] = res_CHROM_WIDE_BL_BH
         T_three[pulsar+"_CHROMCIDX_BL_BH"] = res_CHROMCIDX_BL_BH
-        
+        '''
+        T_three[pulsar+"_RN_BL_CHROMCIDX"] = 0
+        T_three[pulsar+"_RN_BH_CHROMCIDX"] = 0
+        T_three[pulsar+"_DM_BL_CHROMCIDX"] = 0
+        T_three[pulsar+"_DM_BH_CHROMCIDX"] = 0
+        T_three_half[pulsar+"_CHROM_BL_BH"] = 0
+        T_three_half[pulsar+"_CHROM_WIDE_BL_BH"] = 0
+        T_three[pulsar+"_CHROMCIDX_BL_BH"] = 0
+
         if pulsar in ecorr_checks:
             T_three_half[pulsar+"_RN_DM_CHROM_ecorr"] = res_RN_DM_CHROM_ecorr
             T_three[pulsar+"_RN_BL_BH_ecorr"] = res_RN_BL_BH_ecorr
@@ -577,11 +624,11 @@ if alt_dir == "None" or alt_dir == "":
         T_three_half_sort = dict(sorted(T_three_half.items(), key=lambda item: item[1],reverse=True))
         T_three_sort = dict(sorted(T_three.items(), key=lambda item: item[1],reverse=True))
 
-        if list(T_three_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_three_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_three_half_sort.keys())[0]] = list(T_three_half_sort.values())[0]
 
-        if list(T_three_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_three_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_three_sort.keys())[0]] = list(T_three_sort.values())[0]
 
@@ -817,19 +864,36 @@ if alt_dir == "None" or alt_dir == "":
         T_two_half[pulsar+"_DM_CHROM"] = res_DM_CHROM
         T_two_half[pulsar+"_RN_CHROM_WIDE"] = res_RN_CHROM_WIDE
         T_two_half[pulsar+"_DM_CHROM_WIDE"] = res_DM_CHROM_WIDE
+        '''
         T_two[pulsar+"_RN_BL"] = res_RN_BL
         T_two[pulsar+"_RN_BH"] = res_RN_BH
         T_two[pulsar+"_DM_BL"] = res_DM_BL
         T_two[pulsar+"_DM_BH"] = res_DM_BH
         T_two[pulsar+"_BH_BL"] = res_BH_BL
+        '''
+        T_two[pulsar+"_RN_BL"] = 0
+        T_two[pulsar+"_RN_BH"] = 0
+        T_two[pulsar+"_DM_BL"] = 0
+        T_two[pulsar+"_DM_BH"] = 0
+        T_two[pulsar+"_BH_BL"] = 0
+
         T_two[pulsar+"_RN_CHROMCIDX"] = res_RN_CHROMCIDX
         T_two[pulsar+"_DM_CHROMCIDX"] = res_DM_CHROMCIDX
+        '''
         T_two_half[pulsar+"_CHROM_BL"] = res_CHROM_BL
         T_two_half[pulsar+"_CHROM_BH"] = res_CHROM_BH
         T_two_half[pulsar+"_CHROM_WIDE_BL"] = res_CHROM_WIDE_BL
         T_two_half[pulsar+"_CHROM_WIDE_BH"] = res_CHROM_WIDE_BH
         T_two[pulsar+"_CHROMCIDX_BL"] = res_CHROMCIDX_BL
         T_two[pulsar+"_CHROMCIDX_BH"] = res_CHROMCIDX_BH
+        '''
+        
+        T_two_half[pulsar+"_CHROM_BL"] = 0
+        T_two_half[pulsar+"_CHROM_BH"] = 0
+        T_two_half[pulsar+"_CHROM_WIDE_BL"] = 0
+        T_two_half[pulsar+"_CHROM_WIDE_BH"] = 0
+        T_two[pulsar+"_CHROMCIDX_BL"] = 0
+        T_two[pulsar+"_CHROMCIDX_BH"] = 0
 
         if pulsar in ecorr_checks:
             T_two[pulsar+"_RN_DM_ecorr"] = res_RN_DM_ecorr
@@ -855,11 +919,11 @@ if alt_dir == "None" or alt_dir == "":
         T_two_half_sort = dict(sorted(T_two_half.items(), key=lambda item: item[1],reverse=True))
         T_two_sort = dict(sorted(T_two.items(), key=lambda item: item[1],reverse=True))
 
-        if list(T_two_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_two_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_two_half_sort.keys())[0]] = list(T_two_half_sort.values())[0]
 
-        if list(T_two_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_two_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_two_sort.keys())[0]] = list(T_two_sort.values())[0]
         
@@ -971,9 +1035,12 @@ if alt_dir == "None" or alt_dir == "":
         T_one_half[pulsar+"_CHROM"] = res_CHROM
         T_one_half[pulsar+"_CHROM_WIDE"] = res_CHROM_WIDE
         T_one[pulsar+"_CHROMCIDX"] = res_CHROMCIDX
+        '''
         T_one[pulsar+"_BH"] = res_BH
         T_one[pulsar+"_BL"] = res_BL
-
+        '''
+        T_one[pulsar+"_BH"] = 0
+        T_one[pulsar+"_BL"] = 0
         if pulsar in ecorr_checks:
             T_one[pulsar+"_RN_ecorr"] = res_RN_ecorr
             T_one[pulsar+"_DM_ecorr"] = res_DM_ecorr
@@ -989,11 +1056,11 @@ if alt_dir == "None" or alt_dir == "":
         T_one_half_sort = dict(sorted(T_one_half.items(), key=lambda item: item[1],reverse=True))
         T_one_sort = dict(sorted(T_one.items(), key=lambda item: item[1],reverse=True))
 
-        if list(T_one_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_one_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_one_half_sort.keys())[0]] = list(T_one_half_sort.values())[0]
 
-        if list(T_one_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_one_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_one_sort.keys())[0]] = list(T_one_sort.values())[0]
 
@@ -1095,7 +1162,7 @@ elif alt_dir is not None and alt_dir != "":
         choice = {}
         choice[list(T_top_half_sort.keys())[0]] = list(T_top_half_sort.values())[0]
 
-        if list(T_top_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_top_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_top_sort.keys())[0]] = list(T_top_sort.values())[0]
 
@@ -1190,11 +1257,11 @@ elif alt_dir is not None and alt_dir != "":
         
         # Select out condition to maintain probable model
 
-        if list(T_four_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_four_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_four_half_sort.keys())[0]] = list(T_four_half_sort.values())[0]
 
-        if list(T_four_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_four_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_four_sort.keys())[0]] = list(T_four_sort.values())[0]
         
@@ -1347,11 +1414,11 @@ elif alt_dir is not None and alt_dir != "":
         T_three_half_sort = dict(sorted(T_three_half.items(), key=lambda item: item[1],reverse=True))
         T_three_sort = dict(sorted(T_three.items(), key=lambda item: item[1],reverse=True))
 
-        if list(T_three_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_three_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_three_half_sort.keys())[0]] = list(T_three_half_sort.values())[0]
 
-        if list(T_three_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_three_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_three_sort.keys())[0]] = list(T_three_sort.values())[0]
 
@@ -1478,11 +1545,11 @@ elif alt_dir is not None and alt_dir != "":
         T_two_half_sort = dict(sorted(T_two_half.items(), key=lambda item: item[1],reverse=True))
         T_two_sort = dict(sorted(T_two.items(), key=lambda item: item[1],reverse=True))
 
-        if list(T_two_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_two_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_two_half_sort.keys())[0]] = list(T_two_half_sort.values())[0]
 
-        if list(T_two_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_two_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_two_sort.keys())[0]] = list(T_two_sort.values())[0]
         
@@ -1539,11 +1606,11 @@ elif alt_dir is not None and alt_dir != "":
         T_one_half_sort = dict(sorted(T_one_half.items(), key=lambda item: item[1],reverse=True))
         T_one_sort = dict(sorted(T_one.items(), key=lambda item: item[1],reverse=True))
 
-        if list(T_one_half_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_one_half_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_one_half_sort.keys())[0]] = list(T_one_half_sort.values())[0]
 
-        if list(T_one_sort.values())[0] + 4 > list(choice.values())[0]:
+        if list(T_one_sort.values())[0] + bf_cutoff > list(choice.values())[0]:
             choice.popitem()
             choice[list(T_one_sort.keys())[0]] = list(T_one_sort.values())[0]
         '''

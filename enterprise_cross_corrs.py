@@ -47,7 +47,7 @@ parser.add_argument("-partim", dest="partim", help="Par and tim files for the pu
 parser.add_argument("-results", dest="results", help=r"Name of directory created in the default out directory. Will be of the form {pulsar}_{results}", required = True)
 parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisefile used for the noise analysis.", required = False)
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search", help="The noise parameters to search over. Timing model is default. Include as '-noise_search noise1 noise2 noise3' etc. The _c variations of the noise redirects the noise to the constant noisefile values", \
-    choices={"single_bin_cross_corr", "single_bin_cross_corr_test", "crn", "single_bin_cross_corr_fixedamp", "red", "single_bin_cross_corr_fixedamp_swdet_fixed"})
+    choices={"single_bin_cross_corr", "single_bin_cross_corr_test", "crn", "single_bin_cross_corr_fixedamp", "red", "single_bin_cross_corr_fixedamp_swdet_fixed", "ecorr"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc"}, required=True)
 parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
 parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
@@ -802,7 +802,7 @@ if "single_bin_cross_corr"in noise and "single_bin_cross_corr_test" not in noise
 
                 s += sw
             
-        if "SW" not in psrmodels:
+        if "SW" not in psrmodels and "SWDET" not in psrmodels:
             n_earth = parameter.Constant(4)
             deter_sw = solar_wind(n_earth=n_earth)
             mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
@@ -829,8 +829,13 @@ if "single_bin_cross_corr_fixedamp" in noise and "single_bin_cross_corr" not in 
         ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
         s += ef
 
-        if psr.name+"_KAT_MKBF_log10_ecorr" in params.keys():
-            ecorr = parameter.Constant()
+        if "ecorr" not in noise:
+            if psr.name+"_KAT_MKBF_log10_ecorr" in params.keys():
+                ecorr = parameter.Constant()
+                ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=ecorr_selection)
+                s += ec
+        else:
+            ecorr = parameter.Uniform(-10,-1) 
             ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=ecorr_selection)
             s += ec
 
@@ -984,7 +989,7 @@ if "single_bin_cross_corr_fixedamp" in noise and "single_bin_cross_corr" not in 
 
                 s += sw
             
-        if "SW" not in psrmodels:
+        if "SW" not in psrmodels and "SWDET" not in psrmodels:
             n_earth = parameter.Constant(4)
             deter_sw = solar_wind(n_earth=n_earth)
             mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
@@ -1019,10 +1024,11 @@ if "single_bin_cross_corr_fixedamp_swdet_fixed" in noise and "single_bin_cross_c
         ef = white_signals.MeasurementNoise(efac=efac, selection=selection)
         s += ef
 
-        if psr.name+"_KAT_MKBF_log10_ecorr" in params.keys():
-            ecorr = parameter.Constant()
-            ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=ecorr_selection)
-            s += ec
+        if not "ecorr" in noise:
+            if psr.name+"_KAT_MKBF_log10_ecorr" in params.keys():
+                ecorr = parameter.Constant()
+                ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=ecorr_selection)
+                s += ec
 
         if psr.name+"_KAT_MKBF_log10_t2equad" in params.keys() or psr.name+"_KAT_MKBF_log10_tnequad" in params.keys():
             equad = parameter.Constant()
@@ -1170,14 +1176,15 @@ if "single_bin_cross_corr_fixedamp_swdet_fixed" in noise and "single_bin_cross_c
                 swkeys = list(sw_json.keys())
                 swmodels = [ sw_model for sw_model in swkeys if psr.name in sw_model ][0]
                 sw_val =  sw_json[swmodels]
-                n_earth = parameter.Constant(4)
+                n_earth = parameter.Constant(sw_val)
+                #n_earth = parameter.Constant(4)
                 deter_sw = solar_wind(n_earth=n_earth)
                 mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
                 sw = mean_sw
 
                 s += sw
             
-        if "SW" not in psrmodels:
+        if "SW" not in psrmodels and "SWDET" not in psrmodels:
             n_earth = parameter.Constant(4)
             deter_sw = solar_wind(n_earth=n_earth)
             mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')

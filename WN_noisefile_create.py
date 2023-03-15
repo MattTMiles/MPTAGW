@@ -5,7 +5,7 @@ import json
 import sys
 import numpy as np
 
-pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/SW_vs_PM.txt"
+pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/SW_vs_PM.txt"
 enterprise_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/"
 
 wn_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/live_200/"
@@ -68,8 +68,8 @@ for pulsar in open(pulsar_list,"r").readlines():
         print(pulsar + " is not done yet")
 
 
-os.chdir("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/")
+os.chdir("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/")
 
-with open("MPTA_WN_models_new_temp.json","a+") as outfile:
+with open("MPTA_WN_models_new.json","a+") as outfile:
 #with open("MPTA_WN_models_check.json","a+") as outfile:
     json.dump(total_dict,outfile,indent=4)

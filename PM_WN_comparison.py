@@ -4,15 +4,15 @@ import glob
 import json
 import bilby
 
-pm_wn_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/PM_WN/"
+pm_wn_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/PM_WN/"
 wn_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/live_200/"
-wn_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_WN_models.json"))
+wn_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_WN_models.json"))
 
 wnkeys = list(wn_json.keys())
 
 pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
 
-os.chdir("/fred/oz002/users/mmiles/MPTA_GW/enterprise/")
+os.chdir("/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/")
 
 for psr in open(pulsar_list,"r").readlines():
     psr = psr.strip("\n")
@@ -35,11 +35,13 @@ for psr in open(pulsar_list,"r").readlines():
 
     if res_pmwn > res_wn + 2:
         print(psr + ": Full model is preferred")
-        os.system("echo "+psr+" PMWN >> /fred/oz002/users/mmiles/MPTA_GW/enterprise/PMWN_vs_WN_BF2.txt")
+        #os.system("echo "+psr+" PMWN >> /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/PMWN_vs_WN_BF2.txt")
+        os.system("cp -r "+pmwn_psr_dir+" /fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_PM/")
     else:
         #if "ecorr" in wnmodels:
         print(psr + ": WN model is preferred")
-        os.system("echo "+psr+" WN >> /fred/oz002/users/mmiles/MPTA_GW/enterprise/PMWN_vs_WN_BF2.txt")
+        #os.system("echo "+psr+" WN >> /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/PMWN_vs_WN_BF2.txt")
+        os.system("cp -r "+wn_psr_dir+" /fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_PM/")
 
 
 

@@ -18,11 +18,11 @@ for i, pulsar in enumerate(to_use):
     psrname = pulsar.strip("\n")
     print(psrname)
     try:
-        psr_SPGW = gw_dir + "/" + psrname + "/" + psrname + "_SPGW1000"
-        psr_SPGWC = gw_dir + "/" + psrname + "/"+ psrname + "_SPGWC1000"
+        psr_SPGW = gw_dir + "/" + psrname + "/" + psrname + "_SPGW1000_ER"
+        psr_SPGWC = gw_dir + "/" + psrname + "/"+ psrname + "_SPGWC1000_ER"
 
-        result_SPGW = bilby.result.read_in_result(psr_SPGW+"/SPGW1000_result.json")
-        result_SPGWC = bilby.result.read_in_result(psr_SPGWC+"/SPGWC1000_result.json")
+        result_SPGW = bilby.result.read_in_result(psr_SPGW+"/SPGW1000_ER_result.json")
+        result_SPGWC = bilby.result.read_in_result(psr_SPGWC+"/SPGWC1000_ER_result.json")
 
         posts_SPGW_A = result_SPGW.posterior["log10_A_gw"].values
         posts_SPGW_g = result_SPGW.posterior["gamma_gw"].values

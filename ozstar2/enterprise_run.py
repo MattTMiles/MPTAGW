@@ -478,7 +478,7 @@ if "swdet" in noise:
     s += sw
 
 if "spgw" in noise or "spgwc" in noise or "spgwcm" in noise or "spgwc_18" in noise:
-    ev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_noise_models.json"))
+    ev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_models.json"))
     keys = list(ev_json.keys())
     # Get list of models
     psrmodels = [ psr_model for psr_model in keys if pulsar in psr_model ][0].split("_")[1:]
@@ -656,7 +656,7 @@ if "spgw" in noise or "spgwc" in noise or "spgwcm" in noise or "spgwc_18" in noi
     s += gw
 
 if "free_spgw" in noise or "free_spgwc" in noise:
-    ev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_active_noise_models/MPTA_noise_models.json"))
+    ev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_models.json"))
     keys = list(ev_json.keys())
     # Get list of models
     psrmodels = [ psr_model for psr_model in keys if pulsar in psr_model ][0].split("_")[1:]
@@ -885,9 +885,9 @@ if "wn_tester" in noise:
 
 if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_wn_altpar" in noise or "pm_wn_no_equad_altpar" in noise:
     if not "pm_wn_altpar" in noise and not "pm_wn_no_equad_altpar" in noise:
-        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_noise_models.json"))
+        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_models.json"))
     else:
-        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_noise_models.json"))
+        pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_models.json"))
     wn_json = json.load(open(noisefile))
     keys = list(pmev_json.keys())
     wnkeys = list(wn_json.keys())
@@ -898,7 +898,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
 
     for i, pm in enumerate(psrmodels):
 
-        if pm == "RN" or pm == "RED":
+        if pm == "RN" or pm == "RED" and ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
             log10_A_red = parameter.Uniform(-20, -11)
             gamma_red = parameter.Uniform(0, 7)
             pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
@@ -912,7 +912,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
             s += rn
 
-        if pm =="DM":
+        if pm =="DM" and ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
             log10_A_dm = parameter.Uniform(-20, -11)
             gamma_dm = parameter.Uniform(0, 7)
             dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
@@ -924,7 +924,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
             s += dm
 
-        if pm == "CHROM":
+        if pm == "CHROM" and ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
             log10_A_chrom_prior = parameter.Uniform(-20, -11)
             gamma_chrom_prior = parameter.Uniform(0, 7)
             chrom_gp_idx = parameter.Uniform(0,7)
@@ -945,10 +945,10 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             components = 30
             chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
                                                                     idx=idx)
-            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+            chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_wide_gp')
             s += chrom
 
-        if pm == "CHROMCIDX":
+        if pm == "CHROMCIDX" and ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
             log10_A_chrom_prior = parameter.Uniform(-20, -11)
             gamma_chrom_prior = parameter.Uniform(0, 7)
             chrom_gp_idx = parameter.Constant(4)
@@ -972,7 +972,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
             chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
             s += chrom
 
-        if pm == "BL":
+        if pm == "BL" and ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
             log10_A_bn = parameter.Uniform(-20, -11)
             gamma_bn = parameter.Uniform(0, 7)
             band_components = 30
@@ -990,7 +990,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
                                         selection=low_freq, name='low_band_noise')
             s += bnl
 
-        if pm == "BH":
+        if pm == "BH" and ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
             log10_A_bn = parameter.Uniform(-20, -11)
             gamma_bn = parameter.Uniform(0, 7)
             band_components = 30
@@ -1057,7 +1057,7 @@ if "pm_wn" in noise or "pm_wn_no_equad" in noise or "pm_wn_sw" in noise or "pm_w
     
 
 if "PM_WN_SW_extra_fbins" in noise:
-    pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise/MPTA_noise_models.json"))
+    pmev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_models.json"))
     wn_json = json.load(open(noisefile))
     keys = list(pmev_json.keys())
     wnkeys = list(wn_json.keys())
@@ -1336,7 +1336,7 @@ elif sampler =="ppc":
     else:
         header_dir = "out_ppc"
 
-    outDir='/fred/oz002/users/mmiles/MPTA_GW/enterprise/'+header_dir+'/{0}_{1}'.format(pulsar,results_dir)
+    outDir='/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/'+header_dir+'/{0}_{1}'.format(pulsar,results_dir)
     print(outDir)
     try:
         os.mkdir(outDir)

@@ -7,7 +7,7 @@ i=0;
 while [ $i > -1 ]; 
 do   
     echo >> /fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_temp.list
-    squeue --format="%.18i %.9P %.50j %.8u %.8T %.10M %.9l %.6D %R" --me | awk '{print $3}' >> /fred/oz002/users/mmiles/MPTA_GW/cross_corr_slurm.list
+    squeue --format="%.18i %.9P %.100j %.8u %.8T %.10M %.9l %.6D %R" --me | awk '{print $3}' >> /fred/oz002/users/mmiles/MPTA_GW/cross_corr_slurm.list
     for psr1 in $(cat /fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list); 
     do
         for psr2 in $(cat /fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list);

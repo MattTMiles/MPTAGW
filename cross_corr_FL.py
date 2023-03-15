@@ -9,7 +9,7 @@ import pandas as pd
 gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/SPGW"
 psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list"
 
-cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_corrs/fixed_amp_500"
+cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_corrs/fixed_amp_500/"
 
 pulsar_pair_list = "/fred/oz002/users/mmiles/MPTA_GW/pair_bins_new.txt"
 
@@ -29,8 +29,8 @@ bin_number = 100
 
 for pair in pp_list:
     pairname, pairbin = pair.split()
-    if not "J1327" in pairname:
-    #if not "J1327" in pairname or "J1902-5105" in pairname or "J2322-2650" in pairname or "J1036-8317" in pairname:
+    #if not "J1327" in pairname:
+    if "J1327" not in pairname and "J1902-5105" not in pairname and "J2322-2650" not in pairname and "J1036-8317" not in pairname and "J1024-0719" not in pairname:
         print(pairname, pairbin)
 
         try:
@@ -126,26 +126,55 @@ p_total_2 = p_total_2/(np.sum(p_total_2)*bindiff)
 p_total_3 = p_total_3/(np.sum(p_total_3)*bindiff)
 p_total_4 = p_total_4/(np.sum(p_total_4)*bindiff)
 p_total_5 = p_total_5/(np.sum(p_total_5)*bindiff)
-p_total_6 = p_total_6/(np.sum(p_total_6)*bindiff)
-p_total_7 = p_total_7/(np.sum(p_total_7)*bindiff)
+if i_6 > 0:
+    p_total_6 = p_total_6/(np.sum(p_total_6)*bindiff)
+if i_7 > 0:
+    p_total_7 = p_total_7/(np.sum(p_total_7)*bindiff)
+
+bin_list = []
 
 p_corr_1 =  np.random.choice(newbins,size=100, p=p_total_1/np.sum(p_total_1))
+bin_list += [np.array(p_corr_1)]
 p_corr_2 =  np.random.choice(newbins,size=100, p=p_total_2/np.sum(p_total_2))
+bin_list += [np.array(p_corr_2)]
 p_corr_3 =  np.random.choice(newbins,size=100, p=p_total_3/np.sum(p_total_3))
+bin_list += [np.array(p_corr_3)]
 p_corr_4 =  np.random.choice(newbins,size=100, p=p_total_4/np.sum(p_total_4))
+bin_list += [np.array(p_corr_4)]
 p_corr_5 =  np.random.choice(newbins,size=100, p=p_total_5/np.sum(p_total_5))
-p_corr_6 =  np.random.choice(newbins,size=100, p=p_total_6/np.sum(p_total_6))
-p_corr_7 =  np.random.choice(newbins,size=100, p=p_total_7/np.sum(p_total_7))
+bin_list += [np.array(p_corr_5)]
+if i_6 > 0:
+    p_corr_6 =  np.random.choice(newbins,size=100, p=p_total_6/np.sum(p_total_6))
+    bin_list += [np.array(p_corr_6)]
+if i_7 > 0:
+    p_corr_7 =  np.random.choice(newbins,size=100, p=p_total_7/np.sum(p_total_7))
+    bin_list += [np.array(p_corr_7)]
 
+
+plotting_bins = 0
+if i_1 > 0:
+    plotting_bins +=1
+if i_2 > 0:
+    plotting_bins +=1
+if i_3 > 0:
+    plotting_bins +=1
+if i_4 > 0:
+    plotting_bins +=1
+if i_5 > 0:
+    plotting_bins +=1
+if i_6 > 0:
+    plotting_bins +=1
+if i_7 > 0:
+    plotting_bins +=1
 
 angle_linspace = np.linspace(0,180,1000)
 angle_linspace_rad = angle_linspace*(np.pi/180)
 hd = 0.5 - (0.25*((1-np.cos(angle_linspace_rad))/2)) + ((1.5)*((1-np.cos(angle_linspace_rad))/2))*np.log((1-np.cos(angle_linspace_rad))/2)
 
-bin_list = [np.array(p_corr_1), np.array(p_corr_2), np.array(p_corr_3), np.array(p_corr_4), np.array(p_corr_5), np.array(p_corr_6), np.array(p_corr_7)]
+#bin_list = [np.array(p_corr_1), np.array(p_corr_2), np.array(p_corr_3), np.array(p_corr_4), np.array(p_corr_5), np.array(p_corr_6), np.array(p_corr_7)]
 bin_df = pd.DataFrame(bin_list)
 
-angles = np.linspace(0, np.pi,7)
+angles = np.linspace(0, np.pi,plotting_bins)
 
 fig = plt.figure()
 axes = fig.add_subplot(111)
