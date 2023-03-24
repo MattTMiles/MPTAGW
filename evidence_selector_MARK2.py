@@ -1640,7 +1640,7 @@ elif alt_dir is not None and alt_dir != "":
         ''' 
         chosen_evidence.update(choice)
 
-    os.chdir("/fred/oz002/users/mmiles/MPTA_GW/enterprise")
+    os.chdir("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models")
 
     with open(outfile,"a+") as outFile:
         json.dump(chosen_evidence,outFile,indent=4)

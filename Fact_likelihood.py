@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import bilby
 import random
 
-gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/SPGW"
+gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW"
 psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list"
 #psr_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
 def sigma2fwhm(sigma):
@@ -215,7 +215,7 @@ bindiff = bins[1]-bins[0]
 plt.stairs(p_total/(np.sum(p_total)*bindiff), bins, color='k', zorder=0, linewidth=2, label = "Factorised likelihood MPTA CRN")
 
 plt.axvline(-14.28,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.28))
-plt.ylim(10e-10)
+#plt.ylim(10e-10)
 #plt.xlim(-15,-13.75)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)

@@ -13,7 +13,7 @@ do
         for psr2 in $(cat /fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list);
         do 
             
-            if [[ ! "${psr1}_${psr2}" == $(cat /fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_temp.list | grep -w ^${psr1}_${psr2}) ]] && [[ ! "${psr2}_${psr1}" == $(cat /fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_temp.list | grep -w ^${psr2}_${psr1}) ]] && [[ ! "${psr1}" == "${psr2}" ]]; then
+            if [[ ! "${psr1}_${psr2}" == $(grep -w -m 1 ^${psr1}_${psr2} /fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_temp.list) ]] && [[ ! "${psr2}_${psr1}" == $(grep -w -m 1 ^${psr2}_${psr1} /fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_temp.list) ]] && [[ ! "${psr1}" == "${psr2}" ]]; then
                 echo $psr1 $psr2
 
                 sh /home/mmiles/soft/GW/rerun_cross_corrs_megaslurm.sh ${psr1} ${psr2};

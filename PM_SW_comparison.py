@@ -43,7 +43,7 @@ for psr in open(pulsar_list,"r").readlines():
     res_pm = bilby.result.read_in_result(glob.glob(chosen+"/*json")[0]).log_evidence
 
 
-    if res_sw > res_pm + 2:
+    if res_sw > res_pm + 2.3:
         print(psr + ": Solar wind model is preferred")
         os.system("echo "+chosensw+" >> /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/SW_vs_PM.txt")
     else:
