@@ -35,7 +35,7 @@ from enterprise_extensions import models, model_utils, hypermodel, blocks
 from enterprise_extensions import timing
 
 import gc
-
+from scipy import stats
 from scipy.stats import anderson
 
 import argparse
@@ -100,13 +100,13 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
     
     
     fig1, axs= plt.subplots(3,figsize=(16,15))
-    axs[0].errorbar(x=noise_df["MJD"], y=glsfit.resids.resids.value,yerr=glsfit.resids.get_data_error().to(u.s).value,linestyle="",marker=".", label = "Residuals")
+    axs[0].errorbar(x=noise_df["MJD"], y=glsfit.resids.resids.value,yerr=glsfit.toas.get_errors().to(u.s).value,linestyle="",marker=".", label = "Residuals")
     axs[0].set_title(psrname + " residuals")
     axs[0].legend()
     axs[0].set_ylabel("Residuals (s)")
     
     #fig, ax = plt.subplots(figsize=(16,9))
-    axs[1].errorbar(x=noise_df["MJD"], y=glsfit.resids.resids.value,yerr=glsfit.resids.get_data_error().to(u.s).value,linestyle="",marker=".", label = "Residuals",alpha=0.5)
+    axs[1].errorbar(x=noise_df["MJD"], y=glsfit.resids.resids.value,yerr=glsfit.toas.get_errors().to(u.s).value,linestyle="",marker=".", label = "Residuals",alpha=0.5)
     for col in noise_df.columns:
         if "noise" in col:
             #if col != "ecorr_noise" and  col != "SW_noise":
@@ -132,21 +132,23 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
                     whitened_residuals -= noise_df[col].values
                 
     #fig, ax = plt.subplots(figsize=(16,9))
-    axs[2].errorbar(x=noise_df["MJD"], y=whitened_residuals, yerr=glsfit.resids.get_data_error().to(u.s).value,linestyle="",marker=".", label = "Whitened Residuals")
+    axs[2].errorbar(x=noise_df["MJD"], y=whitened_residuals, yerr=glsfit.toas.get_errors().to(u.s).value, linestyle="", marker=".", label = "Whitened Residuals")
     axs[2].set_title(psrname + " whitened residuals")
     axs[2].legend()
     axs[2].set_xlabel("MJD")
     axs[2].set_ylabel("Residuals (s)")
 
-    fig1.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/"+pulsar+"/"+pulsar+"_residual_plot.png")
+    fig1.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/"+pulsar+"_residual_plot.png")
     plt.close()
     #if sw_extract == True:
     #    return noise_df[["MJD", "SW_noise"]].values
     
-    uncs = glsfit.resids.get_data_error().to(u.s).value
-
+    uncs = glsfit.toas.get_errors().to(u.s).value
+    
+    
     try:
         efac = m.EFAC1.value
+        #efac = 0.958275479428316
         uncs *= efac
     except:
         pass
@@ -157,57 +159,83 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
         uncs = np.sqrt(equad**2 + uncs**2)
     except:
         pass
+    
 
     res_df = pd.DataFrame(np.array([mjds, whitened_residuals]).T,columns=["MJD","Noise subtracted (s)"])
-    res_df["Rounded MJD"] = noise_df["MJD"].round(decimals=6)
+    res_df["Rounded MJD"] = noise_df["MJD"].round(decimals=4)
     res_df["WN Scaled Uncertainty (s)"] = uncs
-
     
-    res_WA = res_df.groupby("Rounded MJD").apply(weighted_average, "Noise subtracted (s)", "WN Scaled Uncertainty (s)")
-    unc_WA = res_df.groupby("Rounded MJD").apply(uncertainty_scaled, "WN Scaled Uncertainty (s)")
-
     try:
         ecorr = m.TECORR1.value
         ecorr = 10**(ecorr)
-        #res_df["WN Scaled Uncertainty (s)"] = res_df.groupby("Rounded MJD").apply(ecorr_apply, "WN Scaled Uncertainty (s)", ecorr).values
-        unc_WA = np.sqrt(ecorr**2 + unc_WA**2)
+        res_df["WN Scaled Uncertainty (s)"] = res_df.groupby("Rounded MJD").apply(ecorr_apply, "WN Scaled Uncertainty (s)", ecorr).values
+        #unc_WA = np.sqrt(ecorr**2 + unc_WA**2)
     except:
         pass
+
+    res_WA = res_df.groupby("Rounded MJD").apply(weighted_average, "Noise subtracted (s)", "WN Scaled Uncertainty (s)")
+    unc_WA = res_df.groupby("Rounded MJD").apply(uncertainty_scaled, "WN Scaled Uncertainty (s)")
+
+    num_fp = len(m.free_params)
+    chi_square = np.sum((res_WA**2)/(unc_WA**2))
+    num_obs = len(res_WA)
+    red_chisq = chi_square / (num_obs - num_fp)
+    dof = num_obs - num_fp
+
+    p_value = 1 - stats.chi2.cdf(float(chi_square), dof)
     
     unique_mjd_rounded = np.array(list(set(res_df["Rounded MJD"].values)))
     
     fig, ax2 = plt.subplots(figsize=(15,5))
     ax2.errorbar(x=unique_mjd_rounded, y=res_WA, yerr=unc_WA.values, linestyle="", marker=".", label = "Whitened Averaged Residuals")
-    ax2.set_title(pulsar+" whitened averaged residuals")
+    ax2.set_title(pulsar+' whitened averaged residuals; '+r'$\chi^2_{red}$'+'= {:.2f}'.format(red_chisq)+'; p-value = {:.4f}'.format(p_value))
     ax2.set_xlabel("MJD")
     ax2.set_ylabel("Residuals (s)")
 
-    fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/"+pulsar+"/"+pulsar+"_white_ave.png")
+    fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/"+pulsar+"_white_ave.png")
 
     white_scaled = res_WA/unc_WA.values
     white_scaled = white_scaled - np.mean(white_scaled)
 
+    ws_std = np.std(white_scaled)
+
     res = anderson(white_scaled.values.astype(np.float64))
     
     fig, ax_new = plt.subplots()
-    white_scaled.plot(style=".",figsize=(15,5), title=pulsar, label = "ADS: "+format(res.statistic),legend=True, ax=ax_new)
+    white_scaled.plot(style=".",figsize=(15,5), title=pulsar+"; std dev: "+format(ws_std), label = "ADS: "+format(res.statistic),legend=True, ax=ax_new)
     fig = ax_new.get_figure()
-    fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/"+pulsar+"/"+pulsar+"_anderson_check.png")
+    fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/"+pulsar+"_anderson_check.png")
 
-    return glsfit, m, res_df, noise_df, res.statistic
+    return glsfit, m, res_df, noise_df, res.statistic, ws_std
     
 
     
 parfile = pulsar+"_tdb.par"
 timfile = pulsar+".tim"
 
-glsfit, model, res_df, noise_df, ads = lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=False)
+glsfit, model, res_df, noise_df, ads, ws_std = lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=False)
 
 if ads > 2.49: 
     print(pulsar+" does not pass gaussianity check")
-    os.chdir("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/"+pulsar+"/")
+    os.chdir("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/")
     os.system("touch FAILED_ADS")
 else:
-    print(pulsar+" passes gaussianity check")
-    os.chdir("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/"+pulsar+"/")
-    os.system("touch PASSED_ADS")
+    if 0.75 < ws_std < 0.9:
+        print(pulsar+" passes gaussianity check with low standard dev")
+        os.chdir("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/")
+        os.system("touch PASSED_ADS")
+        os.system("touch LOW_STD_DEV")
+    elif ws_std < 0.75:
+        print(pulsar+" passes gaussianity check with extremely low standard dev")
+        os.chdir("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/")
+        os.system("touch PASSED_ADS")
+        os.system("touch VERY_LOW_STD_DEV")
+    elif ws_std > 1.25:
+        print(pulsar+" passes gaussianity check with very high standard dev")
+        os.chdir("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/")
+        os.system("touch PASSED_ADS")
+        os.system("touch VERY_HIGH_STD_DEV")
+    else:
+        print(pulsar+" passes gaussianity check")
+        os.chdir("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/")
+        os.system("touch PASSED_ADS")
