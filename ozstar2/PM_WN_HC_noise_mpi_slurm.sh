@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=64
+#SBATCH --ntasks=32
 #SBATCH --time=01:00:00
 #SBATCH -o /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/job_outfiles/%x.out
-#SBATCH --mem=20gb
-#SBATCH --tmp=20gb
+#SBATCH --mem=40gb
+#SBATCH --tmp=40gb
 
 source ~/.bashrc
 export OMP_NUM_THREADS=1

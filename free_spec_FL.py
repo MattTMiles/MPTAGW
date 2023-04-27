@@ -7,7 +7,7 @@ import seaborn as sns
 import pandas as pd
 
 gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW"
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list"
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
 
 cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_corrs/fixed_amp_500/"
 
@@ -30,23 +30,25 @@ free_bins = [1]*10
 
 
 for psr in psr_list:
-    print(psr)
+    if psr !="J000000":
+        print(psr)
 
-    try:
-        psr_FREE_SPGWC = gw_dir + "/" + psr + "/" + psr + "_FREE_SPGWC1000"
-        res_FREE_SPGWC = bilby.result.read_in_result(psr_FREE_SPGWC+"/FREE_SPGWC1000_result.json")
+        try:
+            psr_FREE_SPGWC = gw_dir + "/" + psr + "/" + psr + "_FREE_SPGWC1000"
+            res_FREE_SPGWC = bilby.result.read_in_result(psr_FREE_SPGWC+"/FREE_SPGWC1000_result.json")
 
-        i=-1
-        for parlab in res_FREE_SPGWC.parameter_labels:
-            if parlab.startswith("gw"):
-                i +=1
-                posts = res_FREE_SPGWC.posterior[parlab].values
-                p, bins, patches = plt.hist(posts, bins=30, range=(-9, -4), density=True, alpha=0.6, histtype='step')
+            i=-1
+            for parlab in res_FREE_SPGWC.parameter_labels:
+                if parlab.startswith("gw"):
+                    i +=1
+                    posts = res_FREE_SPGWC.posterior[parlab].values
+                    p, bins, patches = plt.hist(posts, bins=30, range=(-9, -4), density=True, alpha=0.6, histtype='step')
 
-                free_bins[i] *= (p + 1e-20)
-    except:
-        print("Not finished")
-        continue
+                    free_bins[i] *= (p + 1e-20)
+                    plt.clf()
+        except:
+            print("Not finished")
+            continue
 
 
 #p_total_7_max=np.max(p_total_7)
@@ -80,17 +82,19 @@ T = 122448047.42001152
 Tyear = 3.8828021125067073704
 
 f_xaxis = np.linspace(1,10,10)
+freal = f_xaxis/T
 
-pwr = (((10**-14.27)**2/(12*(np.pi**2)))*(((1/f_xaxis)*(Tyear))**-4.33))**2
+pwl = np.sqrt((10**-14.26)**2 / 12.0 / np.pi**2 * (1/(86400*365.2425))**(4.3333-3) * freal**(-4.3333) * freal[0])
 
 fig = plt.figure()
 axes = fig.add_subplot(111)
 
 axes.violinplot(prob_free, positions=f_xaxis)
-
+axes.plot(f_xaxis, np.log10(pwl),linestyle="--",label = r"$\log_{10}A = -14.26; \gamma=4.333$")
 #axes.set_xlabel("Hz")
 axes.set_ylabel(r"$\log_{10}(\rho/s)$")
 axes.set_xscale("log")
+axes.legend()
 plt.show()
 '''
 angle_linspace = np.linspace(0,180,1000)

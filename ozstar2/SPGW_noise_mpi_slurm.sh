@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=32
-#SBATCH --time=00:20:00
+#SBATCH --ntasks=16
+#SBATCH --time=00:55:00
 #SBATCH -o /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/job_outfiles/%x.out
 #SBATCH --mem=10gb
 #SBATCH --tmp=10gb

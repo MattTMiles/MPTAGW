@@ -6,16 +6,16 @@ import random
 import seaborn as sns
 import pandas as pd
 
-gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/FREE_SPGW"
+gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW"
 psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list"
 
-cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_corrs/fixed_amp_500/"
+#cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_corrs/fixed_amp_500/"
 
 
 psr_list = list(open(psr_list).readlines())
 
 psr_list = [ x.strip("\n") for x in psr_list ]
-
+#psr_list = ["J1918-0642"]
 i_1 = 0
 i_2 = 0
 i_3 = 0
@@ -45,12 +45,12 @@ for psr in psr_list:
                 free_bins.append(posts)
     
         
-        newbins = np.linspace(-9, -4, 30)
+        newbins = np.linspace(-9, -4, 10)
         T = 122448047.42001152
         Tyear = 3.8828021125067073704
 
-        f_xaxis = np.linspace(1,30,30)
-        f_xaxis_2 = np.linspace(1/T,30/T,30)
+        f_xaxis = np.linspace(1,10,10)
+        f_xaxis_2 = np.linspace(1/T,10/T,10)
 
         p_spec = (((10**(-14.27))**2)/(12*(np.pi**2)))*((f_xaxis_2*Tyear)**-4.33)
 
@@ -63,7 +63,7 @@ for psr in psr_list:
         axes.set_ylabel(r"$\log_{10}(\rho/s)$")
         axes.set_xscale("log")
         #plt.show()
-        plt.savefig(psr_FREE_SPGWC+"/"+psr+"_FREE_SPEC_30_bins.png")
+        plt.savefig(psr_FREE_SPGWC+"/"+psr+"_FREE_SPEC_10_bins.png")
     
 
 

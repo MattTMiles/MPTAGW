@@ -4,7 +4,7 @@ import bilby
 import random
 
 gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW"
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list"
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
 #psr_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
 def sigma2fwhm(sigma):
     return sigma * np.sqrt(8 * np.log(2))
@@ -36,7 +36,8 @@ for i, pulsar in enumerate(to_use):
         #pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,24),density=True)[0] + 1e-20
 
         stacked.append(pdf_SPGWC_A)
-        p, bins, patches = plt.hist(posts_SPGWC_A, bins=30, range=(-18, -12), density=True, alpha=0.6, histtype='step')
+        p, bins, patches = plt.hist(posts_SPGW_A, bins=30, range=(-18, -12), density=True, alpha=0.6, histtype='step')
+        pgam, binsgam, patchesgam = plt.hist(posts_SPGW_g, bins=30, range=(0, 7), density=True, alpha=0.6, histtype='step')
 
         ind = np.argmax(p)
         centres = bins[0:-1] + np.diff(bins)
@@ -109,8 +110,10 @@ for i, pulsar in enumerate(to_use):
 
     if i==0:
         p_total = (p + 1e-20)
+        p_totalgam = (pgam + 1e-20)
     else:
         p_total *= (p + 1e-20)
+        p_totalgam *= (pgam + 1e-20)
 
 smoothed_vals_p1 = np.zeros(p1.shape)
 x_vals = np.linspace(0,29,30)
@@ -215,7 +218,7 @@ bindiff = bins[1]-bins[0]
 plt.stairs(p_total/(np.sum(p_total)*bindiff), bins, color='k', zorder=0, linewidth=2, label = "Factorised likelihood MPTA CRN")
 
 plt.axvline(-14.28,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.28))
-#plt.ylim(10e-10)
+plt.ylim(10e-8)
 #plt.xlim(-15,-13.75)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
@@ -224,6 +227,23 @@ plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
 plt.ylabel("PDF", fontsize=20)
 plt.legend(fontsize=16)
 #plt.tight_layout()
+
+plt.figure(figsize=(4,8))
+#plt.plot(np.linspace(-18,-12,99),fact_l_SPGWC_A/(np.sum(fact_l_SPGWC_A)*diff), color="xkcd:green",linewidth=3,label="Gaussian Kernel Smoothed MPTA CRN")
+#plt.fill_between(np.linspace(-18,-12,99), fact_l_SPGWC_A/(np.sum(fact_l_SPGWC_A)*diff),color="xkcd:green",alpha=0.2)
+
+bindiffgam = binsgam[1]-binsgam[0]
+plt.stairs(p_totalgam/(np.sum(p_totalgam)*bindiffgam), binsgam, color='k', zorder=0, linewidth=2, label = "Factorised likelihood MPTA CRN gamma")
+
+#plt.axvline(-14.28,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.28))
+#plt.ylim(10e-8)
+#plt.xlim(-15,-13.75)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+#plt.yscale("log")
+plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
+plt.ylabel("PDF", fontsize=20)
+plt.legend(fontsize=16)
 
 
 scalefac = fact_l_SPGWC_A_1/np.sum(fact_l_SPGWC_A_1)

@@ -6,10 +6,10 @@ import random
 import seaborn as sns
 import pandas as pd
 
-gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/out_ppc/SPGW"
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list"
+gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW"
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
 
-cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_corrs/fixed_amp_500/"
+cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/cross_corrs/fixed_amp_500/"
 
 pulsar_pair_list = "/fred/oz002/users/mmiles/MPTA_GW/pair_bins_new.txt"
 
@@ -29,8 +29,8 @@ bin_number = 100
 
 for pair in pp_list:
     pairname, pairbin = pair.split()
-    #if not "J1327" in pairname:
-    if "J1327" not in pairname and "J1902-5105" not in pairname and "J2322-2650" not in pairname and "J1036-8317" not in pairname and "J1024-0719" not in pairname:
+    if not "J00000" in pairname:
+    #if "J1327" not in pairname and "J1902-5105" not in pairname and "J2322-2650" not in pairname and "J1036-8317" not in pairname and "J1024-0719" not in pairname:
         print(pairname, pairbin)
 
         try:
