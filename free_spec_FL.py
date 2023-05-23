@@ -34,8 +34,8 @@ for psr in psr_list:
         print(psr)
 
         try:
-            psr_FREE_SPGWC = gw_dir + "/" + psr + "/" + psr + "_FREE_SPGWC1000"
-            res_FREE_SPGWC = bilby.result.read_in_result(psr_FREE_SPGWC+"/FREE_SPGWC1000_result.json")
+            psr_FREE_SPGWC = gw_dir + "/" + psr + "/" + psr + "_FREE_SPGW600_ER"
+            res_FREE_SPGWC = bilby.result.read_in_result(psr_FREE_SPGWC+"/FREE_SPGW600_ER_result.json")
 
             i=-1
             for parlab in res_FREE_SPGWC.parameter_labels:
@@ -84,17 +84,20 @@ Tyear = 3.8828021125067073704
 f_xaxis = np.linspace(1,10,10)
 freal = f_xaxis/T
 
-pwl = np.sqrt((10**-14.26)**2 / 12.0 / np.pi**2 * (1/(86400*365.2425))**(4.3333-3) * freal**(-4.3333) * freal[0])
+pwl = np.sqrt((10**-14.38)**2 / 12.0 / np.pi**2 * (1/(86400*365.2425))**(4.3333-3) * freal**(-4.3333) * freal[0])
 
-fig = plt.figure()
+fig = plt.figure(figsize=(10,5))
 axes = fig.add_subplot(111)
 
 axes.violinplot(prob_free, positions=f_xaxis)
-axes.plot(f_xaxis, np.log10(pwl),linestyle="--",label = r"$\log_{10}A = -14.26; \gamma=4.333$")
+axes.plot(f_xaxis, np.log10(pwl),linestyle="-", color="black",label = "Factorised likelihood result:\n$\log_{10}A = -14.38; \gamma=4.333$")
 #axes.set_xlabel("Hz")
 axes.set_ylabel(r"$\log_{10}(\rho/s)$")
 axes.set_xscale("log")
+axes.set_xlabel("Frequency (T = 3.88 years)")
 axes.legend()
+axes.set_xticklabels(["","","1/T","10/T"])
+fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/PTA_free_spectrum_ER.png")
 plt.show()
 '''
 angle_linspace = np.linspace(0,180,1000)

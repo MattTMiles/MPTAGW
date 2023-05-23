@@ -25,7 +25,14 @@ i_5 = 0
 i_6 = 0
 i_7 = 0
 
-bin_number = 1000
+def sigma2fwhm(sigma):
+    return sigma * np.sqrt(8 * np.log(2))
+
+def fwhm2sigma(fwhm):
+    return fwhm / np.sqrt(8 * np.log(2))   
+
+
+bin_number = 50
 
 for pair in pp_list:
     pairname, pairbin = pair.split()
@@ -35,11 +42,32 @@ for pair in pp_list:
 
         try:
             res_pair = bilby.result.read_in_result(cross_corr_dir + "/" + pairname + "/" + pairname + "_result.json")
-            corr_posts = res_pair.posterior["gw_single_orf_bin"].values
+            
+            # Use this if using the live_500 or live_1000 runs so that only the appropriate amplitude points are taken
+            corr_posts = res_pair.posterior[res_pair.posterior["gw_bins_log10_A"] > -15.5]["gw_single_orf_bin"].values
+            
+            # Use this for the fixed amplitude portions
+            #corr_posts = res_pair.posterior["gw_single_orf_bin"].values
 
             p, bins, patches = plt.hist(corr_posts, bins=bin_number, range=(-1, 1), density=True, alpha=0.6, histtype='step')
             
+            FWHM = 10
+            #FWHM = 16
+            FWHMalt = 2
+            #FWHM2 = 
+            sigma = fwhm2sigma(FWHM)
+            sigmaalt = fwhm2sigma(FWHMalt)
 
+            smoothed_vals = np.zeros(p.shape)
+            x_vals = np.linspace(0,bin_number-1,bin_number)
+            for x_position in x_vals:
+                kernel = np.exp(-(x_vals - x_position) ** 2 / (2 * sigma ** 2))
+                kernel = kernel / sum(kernel)
+                smoothed_vals[int(x_position)] = sum(p * kernel)
+
+
+            p = smoothed_vals
+            
             #if pairbin == "3":
             #    p, bins, patches = plt.hist(corr_posts, bins=30, range=(-1, 1), density=True, alpha=0.6, histtype='step')
 
@@ -133,21 +161,21 @@ if i_7 > 0:
 
 bin_list = []
 
-p_corr_1 =  np.random.choice(newbins,size=1000, p=p_total_1/np.sum(p_total_1))
+p_corr_1 =  np.random.choice(newbins,size=100, p=p_total_1/np.sum(p_total_1))
 bin_list += [np.array(p_corr_1)]
-p_corr_2 =  np.random.choice(newbins,size=1000, p=p_total_2/np.sum(p_total_2))
+p_corr_2 =  np.random.choice(newbins,size=100, p=p_total_2/np.sum(p_total_2))
 bin_list += [np.array(p_corr_2)]
-p_corr_3 =  np.random.choice(newbins,size=1000, p=p_total_3/np.sum(p_total_3))
+p_corr_3 =  np.random.choice(newbins,size=100, p=p_total_3/np.sum(p_total_3))
 bin_list += [np.array(p_corr_3)]
-p_corr_4 =  np.random.choice(newbins,size=1000, p=p_total_4/np.sum(p_total_4))
+p_corr_4 =  np.random.choice(newbins,size=100, p=p_total_4/np.sum(p_total_4))
 bin_list += [np.array(p_corr_4)]
-p_corr_5 =  np.random.choice(newbins,size=1000, p=p_total_5/np.sum(p_total_5))
+p_corr_5 =  np.random.choice(newbins,size=100, p=p_total_5/np.sum(p_total_5))
 bin_list += [np.array(p_corr_5)]
 if i_6 > 0:
-    p_corr_6 =  np.random.choice(newbins,size=1000, p=p_total_6/np.sum(p_total_6))
+    p_corr_6 =  np.random.choice(newbins,size=100, p=p_total_6/np.sum(p_total_6))
     bin_list += [np.array(p_corr_6)]
 if i_7 > 0:
-    p_corr_7 =  np.random.choice(newbins,size=1000, p=p_total_7/np.sum(p_total_7))
+    p_corr_7 =  np.random.choice(newbins,size=100, p=p_total_7/np.sum(p_total_7))
     bin_list += [np.array(p_corr_7)]
 
 
@@ -191,7 +219,7 @@ plt.xticks(ticks=[0,np.pi/6,2*np.pi/6,3*np.pi/6,4*np.pi/6,5*np.pi/6,6*np.pi/6], 
 
 #sns.violinplot(bin_df, color="xkcd:aqua")
 #plt.plot(angle_linspace_rad*(7/angle_linspace_rad.max()),hd, linestyle="--")
-plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/pairwise_cross_corr_varyingamp_500_FL.png")
+plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/pairwise_cross_corr_varyingamp_500_KDE_FL.png")
 plt.show()
 
 

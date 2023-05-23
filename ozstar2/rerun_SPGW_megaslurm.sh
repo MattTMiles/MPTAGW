@@ -64,11 +64,6 @@ if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${p
     #((counter++))
 fi
 
-if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${psr}/${psr}_FREE_SPGWC600/FREE_SPGWC600_result.json" ]] && [[ ! "${psr}_live_ozstar2_600_FREE_SPGWC" == $(grep -w -m 1 ^${psr}_live_ozstar2_600_FREE_SPGWC /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list)  ]]; then
-    sbatch -J ${psr}_live_ozstar2_600_FREE_SPGWC ~/soft/GW/ozstar2/SPGW_noise_mpi_slurm.sh ${psr} FREE_SPGWC600 "efac_c equad_c ecorr_c free_spgwc" 600 DE440
-    echo "rerunning ${psr}_live_ozstar2_600_FREE_SPGWC" >> /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list
-    #((counter++))
-fi
 
 if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${psr}/${psr}_FREE_SPGW1000/FREE_SPGW1000_result.json" ]] && [[ ! "${psr}_live_ozstar2_1000_FREE_SPGW" == $(grep -w -m 1 ^${psr}_live_ozstar2_1000_FREE_SPGW /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list)  ]]; then
     sbatch -J ${psr}_live_ozstar2_1000_FREE_SPGW ~/soft/GW/ozstar2/SPGW_noise_mpi_slurm.sh ${psr} FREE_SPGW1000 "efac_c equad_c ecorr_c free_spgw"  1000 DE440
@@ -76,11 +71,6 @@ if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${p
     #((counter++))
 fi
 
-if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${psr}/${psr}_FREE_SPGWC1000/FREE_SPGWC1000_result.json" ]] && [[ ! "${psr}_live_ozstar2_1000_FREE_SPGWC" == $(grep -w -m 1 ^${psr}_live_ozstar2_1000_FREE_SPGWC /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list)  ]]; then
-    sbatch -J ${psr}_live_ozstar2_1000_FREE_SPGWC ~/soft/GW/ozstar2/SPGW_noise_mpi_slurm.sh ${psr} FREE_SPGWC1000 "efac_c equad_c ecorr_c free_spgwc" 1000 DE440
-    echo "rerunning ${psr}_live_ozstar2_1000_FREE_SPGWC" >> /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list
-    #((counter++))
-fi
 
 if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${psr}/${psr}_FREE_SPGW600_ER/FREE_SPGW600_ER_result.json" ]] && [[ ! "${psr}_live_ozstar2_600_FREE_SPGW_ER" == $(grep -w -m 1 ^${psr}_live_ozstar2_600_FREE_SPGW_ER /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list)  ]]; then
     sbatch -J ${psr}_live_ozstar2_600_FREE_SPGW_ER ~/soft/GW/ozstar2/SPGW_noise_mpi_slurm.sh ${psr} FREE_SPGW600_ER "efac_c equad_c ecorr_c red free_spgw"  600 DE440
@@ -88,8 +78,3 @@ if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${p
     #((counter++))
 fi
 
-if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${psr}/${psr}_FREE_SPGWC600_ER/FREE_SPGWC600_ER_result.json" ]] && [[ ! "${psr}_live_ozstar2_600_FREE_SPGWC_ER" == $(grep -w -m 1 ^${psr}_live_ozstar2_600_FREE_SPGWC_ER /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list)  ]]; then
-    sbatch -J ${psr}_live_ozstar2_600_FREE_SPGWC_ER ~/soft/GW/ozstar2/SPGW_noise_mpi_slurm.sh ${psr} FREE_SPGWC600_ER "efac_c equad_c ecorr_c red free_spgwc" 600 DE440
-    echo "rerunning ${psr}_live_ozstar2_600_FREE_SPGWC_ER" >> /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list
-    #((counter++))
-fi

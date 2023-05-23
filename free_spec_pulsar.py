@@ -7,7 +7,7 @@ import seaborn as sns
 import pandas as pd
 
 gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW"
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/factorised_likelihood.list"
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
 
 #cross_corr_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise/cross_corrs/fixed_amp_500/"
 
@@ -34,8 +34,8 @@ for psr in psr_list:
 
     try:
         free_bins = []
-        psr_FREE_SPGWC = gw_dir + "/" + psr + "/" + psr + "_FREE_SPGWC600"
-        res_FREE_SPGWC = bilby.result.read_in_result(psr_FREE_SPGWC+"/FREE_SPGWC600_result.json")
+        psr_FREE_SPGWC = gw_dir + "/" + psr + "/" + psr + "_FREE_SPGW600_ER"
+        res_FREE_SPGWC = bilby.result.read_in_result(psr_FREE_SPGWC+"/FREE_SPGW600_ER_result.json")
 
         i=-1
         for parlab in res_FREE_SPGWC.parameter_labels:
@@ -46,18 +46,21 @@ for psr in psr_list:
     
         
         newbins = np.linspace(-9, -4, 10)
+
         T = 122448047.42001152
         Tyear = 3.8828021125067073704
 
         f_xaxis = np.linspace(1,10,10)
-        f_xaxis_2 = np.linspace(1/T,10/T,10)
+        freal = f_xaxis/T
 
-        p_spec = (((10**(-14.27))**2)/(12*(np.pi**2)))*((f_xaxis_2*Tyear)**-4.33)
+        pwl = np.sqrt((10**-14.26)**2 / 12.0 / np.pi**2 * (1/(86400*365.2425))**(4.3333-3) * freal**(-4.3333) * freal[0])
 
         fig = plt.figure()
         axes = fig.add_subplot(111)
 
         axes.violinplot(free_bins, positions=f_xaxis)
+        axes.plot(f_xaxis, np.log10(pwl),linestyle="--",label = r"$\log_{10}A = -14.26; \gamma=4.333$")
+
         #axes.plot(f_xaxis,p_spec)
         axes.set_xlabel("1/T (3.88 yrs)")
         axes.set_ylabel(r"$\log_{10}(\rho/s)$")

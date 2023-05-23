@@ -14,5 +14,6 @@ do
         sh /home/mmiles/soft/GW/ozstar2/rerun_SPGW_megaslurm.sh ${psr};
     done
     rm /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list
+    rm /fred/oz002/users/mmiles/MPTA_GW/partim/core*
     sleep 1m    
 done

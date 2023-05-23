@@ -23,6 +23,7 @@ do
     done
     rm /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/cross_temp.list
     rm /fred/oz002/users/mmiles/MPTA_GW/cross_corr_slurm.list
+    rm /fred/oz002/users/mmiles/MPTA_GW/partim/core*
 
     sleep 10m    
 done 

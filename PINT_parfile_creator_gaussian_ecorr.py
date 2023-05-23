@@ -6,7 +6,7 @@ import json
 import numpy as np
 
 pulsar_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
-partim = "/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/SPGW_tdbs"
+partim = "/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/gaussian_ecorr"
 
 noise_dir = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_PM/"
 #noise_dir
@@ -39,7 +39,7 @@ for pulsar in open(pulsar_list).readlines():
         if "equad" in wnkey:
             openpar.write("TNEQ -f KAT_MKBF {} \n".format(white_noise_json[wnkey]))
         if "ecorr" in wnkey:
-            openpar.write("TECORR -f KAT_MKBF {} \n".format(white_noise_json[wnkey]))
+            openpar.write("TNECORR -f KAT_MKBF {} \n".format(white_noise_json[wnkey]))
 
     for key in psrmodels:
         #val = noise_json[key]

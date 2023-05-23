@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import bilby
 import random
+import corner
+from scipy.stats import gaussian_kde
 
 gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW"
 psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
@@ -14,60 +16,84 @@ def fwhm2sigma(fwhm):
 to_use = open(psr_list).readlines()
 random.shuffle(to_use)
 stacked = []
-for i, pulsar in enumerate(to_use):
+
+
+i=0
+for pulsar in to_use:
     psrname = pulsar.strip("\n")
-    print(psrname)
-    try:
-        psr_SPGW = gw_dir + "/" + psrname + "/" + psrname + "_SPGW1000_ER"
-        psr_SPGWC = gw_dir + "/" + psrname + "/"+ psrname + "_SPGWC1000_ER"
+    #if psrname != "J1811-2405" and psrname != "J1918-0642" and psrname != "J1737-0811":
+    #if psrname != "J00000":
+    if psrname != "J0711-6830" and psrname != "J0900-3144" and psrname != "J1017-7156" and psrname != "J1431-5740" and psrname != "J1547-5709" and psrname != "J1652-4838" and psrname != "J1708-3506" and psrname != "J1801-1417" and psrname != "J1802-2124" and psrname != "J2234+0944":
+        print(psrname)
+        try:
+            psr_SPGW = gw_dir + "/" + psrname + "/" + psrname + "_SPGW1000_ER"
+            psr_SPGWC = gw_dir + "/" + psrname + "/"+ psrname + "_SPGWC1000_ER"
 
-        result_SPGW = bilby.result.read_in_result(psr_SPGW+"/SPGW1000_ER_result.json")
-        result_SPGWC = bilby.result.read_in_result(psr_SPGWC+"/SPGWC1000_ER_result.json")
+            result_SPGW = bilby.result.read_in_result(psr_SPGW+"/SPGW1000_ER_result.json")
+            result_SPGWC = bilby.result.read_in_result(psr_SPGWC+"/SPGWC1000_ER_result.json")
 
-        posts_SPGW_A = result_SPGW.posterior["log10_A_gw"].values
-        posts_SPGW_g = result_SPGW.posterior["gamma_gw"].values
+            if not psrname+"_red_noise_log10_A" in result_SPGW.parameter_labels:
+                posts_SPGW_A = result_SPGW.posterior["log10_A_gw"].values
+                posts_SPGW_g = result_SPGW.posterior["gamma_gw"].values
+            else:
+                posts_SPGW_A = result_SPGW.posterior[result_SPGW.posterior[psrname+"_red_noise_log10_A"] < -16.5]["log10_A_gw"].values
+                posts_SPGW_g = result_SPGW.posterior[result_SPGW.posterior[psrname+"_red_noise_log10_A"] < -16.5]["gamma_gw"].values
 
-        posts_SPGWC_A = result_SPGWC.posterior["log10_A_gw"].values
+            posts_SPGWC_A = result_SPGWC.posterior["log10_A_gw"].values
 
-        pdf_SPGW_A = np.histogram(posts_SPGW_A,bins=np.linspace(-18,-12,24),density=True)[0] + 1e-20
-        pdf_SPGW_g = np.histogram(posts_SPGW_g,bins=np.linspace(0,7,24),density=True)[0] + 1e-20
-        
-        pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,100),density=True)[0] + 1e-20
-        #pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,24),density=True)[0] + 1e-20
+            pdf_SPGW_A = np.histogram(posts_SPGW_A,bins=np.linspace(-18,-12,99),density=True)[0] + 1e-20
+            pdf_SPGW_g = np.histogram(posts_SPGW_g,bins=np.linspace(0,7,99),density=True)[0] + 1e-20
+            
+            pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,100),density=True)[0] + 1e-20
+            #pdf_SPGWC_A = np.histogram(posts_SPGWC_A,bins=np.linspace(-18,-12,24),density=True)[0] + 1e-20
 
-        stacked.append(pdf_SPGWC_A)
-        p, bins, patches = plt.hist(posts_SPGW_A, bins=30, range=(-18, -12), density=True, alpha=0.6, histtype='step')
-        pgam, binsgam, patchesgam = plt.hist(posts_SPGW_g, bins=30, range=(0, 7), density=True, alpha=0.6, histtype='step')
+            stacked.append(pdf_SPGWC_A)
+            plt.figure(0)
+            p, bins, patches = plt.hist(posts_SPGWC_A, bins=100, range=(-18, -12), density=True, alpha=0.6, histtype='step')
+            #try:
+            #except
+            pgam, binsgam, patchesgam = plt.hist(posts_SPGW_g, bins=100, range=(0, 7), density=True, alpha=0.6, histtype='step')
+            plt.figure(1)
+            p2d, xbins2d, ybins2d, im = plt.hist2d(posts_SPGW_A, posts_SPGW_g, bins=[20,20], range=([-18, -12],[0, 7]), density=True, alpha=0.6)
+            #print(p2d)
+            ind = np.argmax(p)
+            centres = bins[0:-1] + np.diff(bins)
+            print(centres[ind])
 
-        ind = np.argmax(p)
-        centres = bins[0:-1] + np.diff(bins)
-        print(centres[ind])
-
-    except:
-        continue
+        except:
+            continue
+    
+    #if np.any(p2d[:1,:]<=0.0001):
+    #    print(psrname+" close to zero sample")
+    #    continue
     
     #stacked = np.vstack(stacked)
 
-    #FWHM = 6
-    FWHM = 16
+    FWHM = 6
+    #FWHM = 16
     FWHMalt = 2
     #FWHM2 = 
     sigma = fwhm2sigma(FWHM)
     sigmaalt = fwhm2sigma(FWHMalt)
 
-    smoothed_vals = np.zeros(pdf_SPGW_A.shape)
-    x_vals = np.linspace(0,22,23)
+    smoothed_vals = np.zeros(p.shape)
+    x_vals = np.linspace(0,99,100)
     for x_position in x_vals:
         kernel = np.exp(-(x_vals - x_position) ** 2 / (2 * sigma ** 2))
         kernel = kernel / sum(kernel)
-        smoothed_vals[int(x_position)] = sum(pdf_SPGW_A * kernel)
+        smoothed_vals[int(x_position)] = sum(p * kernel)
 
-    smoothed_valsg = np.zeros(pdf_SPGW_g.shape)
-    x_vals = np.linspace(0,22,23)
+
+
+    smoothed_valsg = np.zeros(pgam.shape)
+    x_vals = np.linspace(0,99,100)
     for x_position in x_vals:
         kernel = np.exp(-(x_vals - x_position) ** 2 / (2 * sigma ** 2))
         kernel = kernel / sum(kernel)
-        smoothed_valsg[int(x_position)] = sum(pdf_SPGW_g * kernel)
+        smoothed_valsg[int(x_position)] = sum(pgam * kernel)
+
+
+
 
     smoothed_valsC = np.zeros(pdf_SPGWC_A.shape)
     x_vals = np.linspace(0,98,99)
@@ -109,12 +135,17 @@ for i, pulsar in enumerate(to_use):
 
 
     if i==0:
-        p_total = (p + 1e-20)
-        p_totalgam = (pgam + 1e-20)
+        p_total = (smoothed_vals + 1e-20)
+        p_totalgam = (smoothed_valsg + 1e-20)
+        p_total_2d = (p2d.T + 1e-20)
+        #im_total = im
     else:
-        p_total *= (p + 1e-20)
-        p_totalgam *= (pgam + 1e-20)
-
+        p_total *= (smoothed_vals + 1e-20)
+        p_totalgam *= (smoothed_valsg + 1e-20)
+        p_total_2d *= (p2d.T + 1e-20)
+        #im_total *= im
+    i=i+1
+'''
 smoothed_vals_p1 = np.zeros(p1.shape)
 x_vals = np.linspace(0,29,30)
 #x_vals = np.linspace(0,22,23)
@@ -130,7 +161,7 @@ for x_position in x_vals:
     kernel = np.exp(-(x_vals - x_position) ** 2 / (2 * sigmaalt ** 2))
     kernel = kernel / sum(kernel)
     smoothed_vals_p2[int(x_position)] = sum(p2 * kernel)
-
+'''
 
 #smoothed_valsC = np.zeros(p_total.shape)
 #x_vals = np.linspace(0,len(p_total)-1,len(p_total))
@@ -217,17 +248,17 @@ plt.figure(figsize=(4,8))
 bindiff = bins[1]-bins[0]
 plt.stairs(p_total/(np.sum(p_total)*bindiff), bins, color='k', zorder=0, linewidth=2, label = "Factorised likelihood MPTA CRN")
 
-plt.axvline(-14.28,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.28))
-plt.ylim(10e-8)
+plt.axvline(-14.38,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.38))
+plt.ylim(0.001)
 #plt.xlim(-15,-13.75)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
-plt.yscale("log")
-plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
+plt.yscale("linear")
+plt.xlabel(r"CRN: $\mathrm{log}_{10}A_\mathrm{CP}$", fontsize=20)
 plt.ylabel("PDF", fontsize=20)
 plt.legend(fontsize=16)
 #plt.tight_layout()
-
+'''
 plt.figure(figsize=(4,8))
 #plt.plot(np.linspace(-18,-12,99),fact_l_SPGWC_A/(np.sum(fact_l_SPGWC_A)*diff), color="xkcd:green",linewidth=3,label="Gaussian Kernel Smoothed MPTA CRN")
 #plt.fill_between(np.linspace(-18,-12,99), fact_l_SPGWC_A/(np.sum(fact_l_SPGWC_A)*diff),color="xkcd:green",alpha=0.2)
@@ -241,9 +272,60 @@ plt.stairs(p_totalgam/(np.sum(p_totalgam)*bindiffgam), binsgam, color='k', zorde
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
 #plt.yscale("log")
-plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
+plt.xlabel(r"CRN: $\gamma_{CP}$", fontsize=20)
 plt.ylabel("PDF", fontsize=20)
 plt.legend(fontsize=16)
+
+#adjusted_prob = p_total_2d/(np.sum(p_total_2d))
+#adjusted_prob = p_total_2d/(np.sum(p_total_2d)*np.diff([xbins2d,ybins2d]).mean())
+
+'''
+
+newxbins2d = np.linspace(-18,-12,100)
+newybins2d = np.linspace(0,7,100)
+#newxbins2d = newxbins2d[:-1]+(0.5*(newxbins2d[1] -newxbins2d[0]))
+#newybins2d = newybins2d[:-1]+(0.5*(newybins2d[1] -newybins2d[0]))
+
+#newbins2d = xbins2d + 0.5*(xbins2d[1]-xbins2d[0])
+
+X, Y = np.meshgrid(newxbins2d,newybins2d)
+#multix = np.array([newxbins2d]*30)
+#multiy = np.array([newybins2d]*30)
+
+bindiffgam = binsgam[1]-binsgam[0]
+pgam_adjust = p_totalgam/(np.sum(p_totalgam)*bindiffgam)
+p_adjust = p_total/(np.sum(p_total)*bindiff)
+
+#data = np.vstack([p_adjust,pgam_adjust])
+#kde = gaussian_kde(data)
+
+#Z = kde.evaluate(np.vstack([X.ravel(), Y.ravel()]))
+#plt.figure(figsize=(4,8))
+#plt.imshow(Z.reshape(X.shape),
+#           origin='lower', aspect='auto',
+#           extent=[-18,-12, 0,7],
+#           cmap='Blues')
+#cb = plt.colorbar()
+#cb.set_label("density")
+
+
+ampsample = np.random.choice(newxbins2d,size=10000, p=p_adjust/np.sum(p_adjust))
+gammasample = np.random.choice(newybins2d,size=10000, p=pgam_adjust/np.sum(pgam_adjust))
+corner.corner(np.array([ampsample,gammasample]).T, bins=100, range=([-18, -12], [0, 7]), smooth=True, smooth1d=True, labels=[r"$log_{10}A_{CP}$", r"$\gamma_{CP}$"])
+
+#plt.show()
+
+#adjusted_prob = p_total_2d/(np.sum(p_total_2d)*np.diff([X,Y])[0].mean())
+#corner.corner(np.array([X.flatten(),Y.flatten()]).T, bins=30, range=([-18, -12], [0, 7]), weights=adjusted_prob, smooth=True, smooth1d=True, labels=[r"$log_{10}A_{CP}$", r"$\gamma_{CP}$"])
+#corner.corner(np.array([X.flatten(),Y.flatten()]).T, bins=20, range=([-18, -12], [0, 7]), weights=adjusted_prob.flatten(), labels=[r"$log_{10}A_{CP}$", r"$\gamma_{CP}$"])
+
+
+#fig, ax = plt.subplots(figsize=(4,8))
+#ax.hist2d(p_total/(np.sum(p_total)*bindiff), p_totalgam/(np.sum(p_totalgam)*bindiffgam), bins=[bins,binsgam])
+#ax.set_xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
+#ax.set_ylabel(r"CRN: $\gamma_{CP}$", fontsize=20)
+#ax.set_title("2D posterior")
+'''
 
 
 scalefac = fact_l_SPGWC_A_1/np.sum(fact_l_SPGWC_A_1)
@@ -253,25 +335,26 @@ peakval = np.argmax(scalefac)
 plt.figure(figsize=(4,8))
 #plt.plot(np.linspace(-18,-12,99),fact_l_SPGWC_A_1/(np.sum(fact_l_SPGWC_A_1)*diff), color="xkcd:green",linewidth=3,label="Gaussian Kernel Smoothed MPTA CRN")
 #plt.fill_between(np.linspace(-18,-12,99), fact_l_SPGWC_A_1/(np.sum(fact_l_SPGWC_A_1)*diff),color="xkcd:green",alpha=0.2)
-
+'''
+plt.figure(figsize=(4,8))
 bindiff = bins[1]-bins[0]
 plt.stairs(p1/(np.sum(p1)*bindiff), bins, color='k', zorder=0, linewidth=2, label = "Factorised likelihood MPTA CRN (1/2)")
 
-plt.axvline(-14.28,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.28))
-plt.ylim(10e-8)
+plt.axvline(-14.38,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.38))
+plt.ylim(0.001)
 #plt.xlim(-15,-13.75)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
-plt.yscale("log")
+plt.yscale("linear")
 plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
 plt.ylabel("PDF", fontsize=20)
 plt.legend(fontsize=16)
 
 
-scalefac = smoothed_vals_p2/np.sum(smoothed_vals_p2)
+#scalefac = smoothed_vals_p2/np.sum(smoothed_vals_p2)
 amps = np.linspace(-18,-12,30)
 diff = amps[1]-amps[0]
-peakval = np.argmax(scalefac)
+#peakval = np.argmax(scalefac)
 plt.figure(figsize=(4,8))
 #plt.plot(np.linspace(-18,-12,30),smoothed_vals_p2/(np.sum(smoothed_vals_p2)*diff), color="xkcd:green",linewidth=3,label="Gaussian Kernel Smoothed MPTA CRN")
 #plt.fill_between(np.linspace(-18,-12,30), smoothed_vals_p2/(np.sum(smoothed_vals_p2)*diff),color="xkcd:green",alpha=0.2)
@@ -280,16 +363,17 @@ bindiff = bins[1]-bins[0]
 plt.stairs(p2/(np.sum(p2)*bindiff), bins, color='k', zorder=0, linewidth=2, label = "Factorised likelihood MPTA CRN (2/2)")
 
 #plt.axvline(amps[peakval],color="dimgray",linestyle="--",label="CRN = {:.2f}".format(amps[peakval]))
-plt.axvline(-14.28,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.28))
-plt.ylim(10e-8)
+plt.axvline(-14.38,color="dimgray",linestyle="--",label="CRN = {:.2f}".format(-14.38))
+plt.ylim(0.001)
 #plt.xlim(-15,-13.75)
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
-plt.yscale("log")
+plt.yscale("linear")
 plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
 plt.ylabel("PDF", fontsize=20)
 plt.legend(fontsize=16)
-
+'''
+'''
 
 
 

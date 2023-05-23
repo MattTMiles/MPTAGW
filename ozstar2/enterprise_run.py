@@ -389,7 +389,7 @@ for n in noise:
 
     if "red" == n or "red_c" == n or "red_wide" == n:
         pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
-        rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
+        rn = gp_signals.FourierBasisGP(spectrum=pl, components=120, Tspan=Tspan)
         s += rn
 
     if "hfred" == n:
@@ -404,7 +404,7 @@ for n in noise:
 
 
     if "dm" == n or "dm_c" == n or "dm_wide" == n or "dm_wider" == n:
-        dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=30,option="powerlaw")
+        dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=120,option="powerlaw")
         s += dm
     
     if "hc_dm" == n:
@@ -415,7 +415,7 @@ for n in noise:
         chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior,
                                     gamma=gamma_chrom_prior)
         idx = chrom_gp_idx
-        components = 30
+        components = 120
         chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
                                                                 idx=idx)
         chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
@@ -425,7 +425,7 @@ for n in noise:
         chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior,
                                     gamma=gamma_chrom_prior)
         idx = chrom_gp_idx
-        components = 30
+        components = 120
         chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
                                                                 idx=idx)
         chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chromcidx_gp')
@@ -455,7 +455,7 @@ for n in noise:
         chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior,
                                     gamma=gamma_chrom_prior)
         idx = chrom_gp_idx
-        components = 30
+        components = 120
         chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
                                                                 idx=idx)
         chrom = gp_signals.BasisGP(chrom_model, chrom_basis, selection = chrom_split, name='chrom_gp_split')
@@ -465,7 +465,7 @@ for n in noise:
         chrom_model = utils.powerlaw(log10_A=log10_A_add_chrom_prior,
                                     gamma=gamma_add_chrom_prior)
         idx = add_chrom_gp_idx
-        components = 30
+        components = 120
         chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
                                                                 idx=idx)
         add_chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='add_chrom_gp')
@@ -479,13 +479,13 @@ for n in noise:
 
     if "gw" == n or "gw_c" == n or "gw_const_gamma" == n or "gw_const_gamma_wide" == n or "lin_exp_gw_const_gamma_wide" == n:
         gpl = utils.powerlaw(log10_A=log10_A_gw, gamma=gamma_gw)
-        gw = gp_signals.FourierBasisGP(spectrum=gpl, components=30, Tspan=Tspan, name='gwb')
+        gw = gp_signals.FourierBasisGP(spectrum=gpl, components=120, Tspan=Tspan, name='gwb')
         s += gw
 
     if "band_low"== n or "band_low_c" == n:
         #max_cadence = 60  # days
         #band_components = int(Tspan / (max_cadence*86400))
-        band_components = 30
+        band_components = 120
         bpl = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
         bnl = gp_signals.FourierBasisGP(bpl, components=band_components,
                                     selection=low_freq, name='low_band_noise')
@@ -494,7 +494,7 @@ for n in noise:
     if "band_high"== n or "band_high_wide" == n or "band_high_c" == n:
         #max_cadence = 60  # days
         #band_components = int(Tspan / (max_cadence*86400))
-        band_components = 30
+        band_components = 120
         bph = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
         bnh = gp_signals.FourierBasisGP(bph, components=band_components,
                                     selection=high_freq, name='high_band_noise')
