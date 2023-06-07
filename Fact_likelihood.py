@@ -280,7 +280,7 @@ plt.legend(fontsize=16)
 #adjusted_prob = p_total_2d/(np.sum(p_total_2d)*np.diff([xbins2d,ybins2d]).mean())
 
 '''
-
+'''
 newxbins2d = np.linspace(-18,-12,100)
 newybins2d = np.linspace(0,7,100)
 #newxbins2d = newxbins2d[:-1]+(0.5*(newxbins2d[1] -newxbins2d[0]))
@@ -318,7 +318,7 @@ corner.corner(np.array([ampsample,gammasample]).T, bins=100, range=([-18, -12], 
 #adjusted_prob = p_total_2d/(np.sum(p_total_2d)*np.diff([X,Y])[0].mean())
 #corner.corner(np.array([X.flatten(),Y.flatten()]).T, bins=30, range=([-18, -12], [0, 7]), weights=adjusted_prob, smooth=True, smooth1d=True, labels=[r"$log_{10}A_{CP}$", r"$\gamma_{CP}$"])
 #corner.corner(np.array([X.flatten(),Y.flatten()]).T, bins=20, range=([-18, -12], [0, 7]), weights=adjusted_prob.flatten(), labels=[r"$log_{10}A_{CP}$", r"$\gamma_{CP}$"])
-
+'''
 
 #fig, ax = plt.subplots(figsize=(4,8))
 #ax.hist2d(p_total/(np.sum(p_total)*bindiff), p_totalgam/(np.sum(p_totalgam)*bindiffgam), bins=[bins,binsgam])
@@ -335,7 +335,7 @@ peakval = np.argmax(scalefac)
 plt.figure(figsize=(4,8))
 #plt.plot(np.linspace(-18,-12,99),fact_l_SPGWC_A_1/(np.sum(fact_l_SPGWC_A_1)*diff), color="xkcd:green",linewidth=3,label="Gaussian Kernel Smoothed MPTA CRN")
 #plt.fill_between(np.linspace(-18,-12,99), fact_l_SPGWC_A_1/(np.sum(fact_l_SPGWC_A_1)*diff),color="xkcd:green",alpha=0.2)
-'''
+
 plt.figure(figsize=(4,8))
 bindiff = bins[1]-bins[0]
 plt.stairs(p1/(np.sum(p1)*bindiff), bins, color='k', zorder=0, linewidth=2, label = "Factorised likelihood MPTA CRN (1/2)")
@@ -373,7 +373,7 @@ plt.xlabel(r"CRN: $log_{10}A_{CP}$", fontsize=20)
 plt.ylabel("PDF", fontsize=20)
 plt.legend(fontsize=16)
 '''
-'''
+
 
 
 

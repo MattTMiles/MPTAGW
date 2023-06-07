@@ -23,7 +23,19 @@ for i in {1..50}; do echo $i;
         #((counter++))
     fi
 
+    if [[ ! "MPTA_CRN_FREESPEC_ER_RUN_PTMCMC_$i" == $(grep -w -m 1 ^MPTA_CRN_FREESPEC_ER_RUN_PTMCMC_$i /fred/oz002/users/mmiles/MPTA_GW/PTA_CRN_slurm.list)  ]]; then
+        sbatch -J MPTA_CRN_FREESPEC_ER_RUN_PTMCMC_$i /home/mmiles/soft/GW/ozstar2/PTA_CRN_FREESPEC_ER_PTMCMC_mpi_slurm.sh $i
+        echo "MPTA_CRN_FREESPEC_ER_RUN_PTMCMC_$i" >> /fred/oz002/users/mmiles/MPTA_GW/PTA_CRN_slurm.list
+        #((counter++))
+    fi
+
 done
 
+for i in {1..200}; do echo $i;
 
-
+    if [[ ! "MPTA_HD_ER_RUN_PTMCMC_$i" == $(grep -w -m 1 ^MPTA_HD_ER_RUN_PTMCMC_$i /fred/oz002/users/mmiles/MPTA_GW/PTA_CRN_slurm.list)  ]]; then
+        sbatch -J MPTA_HD_ER_RUN_PTMCMC_$i /home/mmiles/soft/GW/ozstar2/PTA_CRN_HD_PL_ER_PTMCMC_mpi_slurm.sh $i
+        echo "MPTA_HD_ER_RUN_PTMCMC_$i" >> /fred/oz002/users/mmiles/MPTA_GW/PTA_CRN_slurm.list
+        #((counter++))
+    fi
+done

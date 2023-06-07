@@ -13,8 +13,7 @@ noise_json = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noi
 #psrlist = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
 psrlist = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
 psrlist = list(open(psrlist).readlines())
-#outfile = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_allpulsars_1D_med_and_error.json"
-outfile = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_allpulsars_1D_med_and_error.json"
+outfile = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_values_SPGWER_1Dmax.json"
 
 model_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/PM_WN_HC/"
 
@@ -39,19 +38,21 @@ for pulsar in psrlist:
         res = bilby.result.read_in_result(glob.glob("/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/PM_WN_HC/"+psrname+"*/"+psrname+"_PM_WN_SW_HC/*json")[0])
         for parlab in res.parameter_labels:
             #mpta_models[parlab] = res.posterior.iloc[res.posterior.log_likelihood.idxmax()][parlab]
-            mpta_models[parlab] = res.get_one_dimensional_median_and_error_bar(parlab).string
-
+            pdf_hist = np.histogram(res.posterior[parlab],bins=25,density=True)
+            mpta_models[parlab] = pdf_hist[1][pdf_hist[0].argmax()]
     elif "SWDET" in psrmodels:
         res = bilby.result.read_in_result(glob.glob("/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/PM_WN_HC/"+psrname+"*/"+psrname+"_PM_WN_SW_HC/*json")[0])
         for parlab in res.parameter_labels:
             if "gp_sw" not in parlab:
                 #mpta_models[parlab] = res.posterior.iloc[res.posterior.log_likelihood.idxmax()][parlab]
-                mpta_models[parlab] = res.get_one_dimensional_median_and_error_bar(parlab).string
+                pdf_hist = np.histogram(res.posterior[parlab],bins=25,density=True)
+                mpta_models[parlab] = pdf_hist[1][pdf_hist[0].argmax()]
     else:
         res = bilby.result.read_in_result(glob.glob("/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/PM_WN_HC/"+psrname+"*/"+psrname+"_PM_WN_HC/*json")[0])
         for parlab in res.parameter_labels:
             #mpta_models[parlab] = res.posterior.iloc[res.posterior.log_likelihood.idxmax()][parlab]
-            mpta_models[parlab] = res.get_one_dimensional_median_and_error_bar(parlab).string
+            pdf_hist = np.histogram(res.posterior[parlab],bins=25,density=True)
+            mpta_models[parlab] = pdf_hist[1][pdf_hist[0].argmax()]
 
 
 

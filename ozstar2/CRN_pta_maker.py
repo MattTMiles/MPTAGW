@@ -37,6 +37,8 @@ import bilby
 import argparse
 import time
 import faulthandler
+import dill
+
 
 faulthandler.enable()
 ## Fix the plot colour to white
@@ -49,27 +51,23 @@ parser.add_argument("-partim", dest="partim", help="Par and tim files for the pu
 parser.add_argument("-results", dest="results", help=r"Name of directory created in the default out directory. Will be of the form {pulsar}_{results}", required = True)
 parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisefile used for the noise analysis.", required = False)
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search",help="Which GW search to do. If multiple are chosen it will combine them i.e. HD + monopole", \
-    choices={"pl_nocorr_freegam","pl_nocorr_fixgam","bpl_nocorr_freegam","freespec_nocorr","pl_orf_bins","pl_orf_spline","pl_hd_fixgam","pl_hdnoauto_fixgam",\
+    choices={"pl_nocorr_freegam","pl_nocorr_fixgam","bpl_nocorr_freegam","freespec_nocorr","pl_orf_bins","pl_orf_spline","pl_hd_fixgam", "pl_hd_freegam","pl_hdnoauto_fixgam",\
         "freespec_hd","pl_dp","freespec_dp","pl_mono","freespec_monopole", "extra_red"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc"}, required=True)
-parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
-parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
 parser.add_argument("-alt_dir", dest="alt_dir", help=r"With this the head result directory will be altered. i.e. instead of out_ppc it would be {whatever}/{is_wanted}/{pulsar}_{results}", required = False)
 #parser.add_argument("-sse", dest="sse", type = str.upper, help=r"Choose an alternative solar system ephemeris to use (SSE). Default is DE440.", required = False)
 parser.add_argument("-psrlist", dest="psrlist", nargs="+", help=r"List of pulsars to use", required = False)
-
+parser.add_argument("-ptaname", dest="ptaname", help=r"Name of pta object", required = True)
 args = parser.parse_args()
 
 results_dir = str(args.results)
 noisefile = args.noisefile
 noise = args.noise_search
 sampler = args.sampler
-pool = args.pool
-nlive=args.nlive
 partim = args.partim
 custom_results = str(args.alt_dir)
 psr_list = args.psrlist
-
+ptaname= str(args.ptaname)
 
 if psr_list is not None and psr_list != "":
     if type(psr_list[0]) != list:
@@ -88,12 +86,8 @@ timfiles = sorted(glob.glob(datadir + '/*tim'))
 
 # filter
 if psrlist is not None:
-    parfiles = [x for x in parfiles if x.split('/')[-1].split('.')[0] in psrlist][:6]
-    timfiles = [x for x in timfiles if x.split('/')[-1].split('.')[0] in psrlist][:6]
-
-#parfiles = parfiles[69:]
-#timfiles = timfiles[69:]
-
+    parfiles = [x for x in parfiles if x.split('/')[-1].split('.')[0] in psrlist]
+    timfiles = [x for x in timfiles if x.split('/')[-1].split('.')[0] in psrlist]
 
 ## Read into enterprise objects
 #psrs = []
@@ -102,12 +96,28 @@ if psrlist is not None:
 #else:
 ephemeris = 'DE440' # Static as not using bayesephem
 
+# The controller loads in the data from teh data file.
+#if controller:
 psrs = []
 for p, t in zip(parfiles, timfiles):
     #if "J1903" not in p and "J1455" not in p:
     if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p:
         psr = Pulsar(p, t, ephem=ephemeris)
         psrs.append(psr)
+
+
+# All the workers are waiting to be sent data.
+
+
+# psrs = []
+# for p, t in zip(parfiles, timfiles):
+#     #if "J1903" not in p and "J1455" not in p:
+#     if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p:
+#         psr = Pulsar(p, t, ephem=ephemeris)
+#         psrs.append(psr)
+
+
+
 
 ## Get parameter noise dictionary
 params = {}
@@ -156,16 +166,16 @@ def dm_noise(log10_A,gamma,Tspan,components=30,option="powerlaw"):
     """
     nfreqs = 30
     if option=="powerlaw":
-      #pl = utils.powerlaw(log10_A=log10_A, gamma=gamma, components=components)
-      pl = utils.powerlaw(log10_A=log10_A, gamma=gamma)
-      #pl = enterprise.signals.gp_priors.powerlaw_no_components(log10_A=log10_A, gamma=gamma)
+    #pl = utils.powerlaw(log10_A=log10_A, gamma=gamma, components=components)
+        pl = utils.powerlaw(log10_A=log10_A, gamma=gamma)
+    #pl = enterprise.signals.gp_priors.powerlaw_no_components(log10_A=log10_A, gamma=gamma)
 
     #elif option=="turnover":
     #  fc = parameter.Uniform(self.params.sn_fc[0],self.params.sn_fc[1])
     #  pl = powerlaw_bpl(log10_A=log10_A, gamma=gamma, fc=fc,
     #                    components=components)
     dm_basis = utils.createfourierdesignmatrix_dm(nmodes = components,
-                                                  Tspan=Tspan)
+                                                Tspan=Tspan)
     dmn = gp_signals.BasisGP(pl, dm_basis, name='dm_gp')
 
     return dmn
@@ -214,19 +224,19 @@ for i,n in enumerate(noise):
     if "pl_nocorr_freegam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=None,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=None,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
 
     #power law, fixed 13/3 spectral index, no correlations
     if "pl_nocorr_fixgam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.3333,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.3333,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
 
     #broken power law, free spectral index, no correlations
     if "bpl_nocorr_freegam" == n:
@@ -240,11 +250,11 @@ for i,n in enumerate(noise):
     #free-spectrum power law, no correlations
     if "freespec_nocorr" == n:
         if i==0:
-            crn = common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = None, name = 'gw')
+            crn = common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 30,
+                            orf = None, name = 'gw')
         else:
-            crn += common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = None, name = 'gw')
+            crn += common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 30,
+                            orf = None, name = 'gw')
 
     #Correlated CRN models - free ORF
     if "pl_orf_bins" == n:
@@ -261,7 +271,7 @@ for i,n in enumerate(noise):
                                 components=components, orf='spline_orf', name='gw_bins')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.33,
-                             components=components, orf='spline_orf', name='gw_bins')
+                            components=components, orf='spline_orf', name='gw_bins')
 
     # Powerlaw Hellings-Downs
     if "pl_hd_fixgam" == n:
@@ -271,41 +281,50 @@ for i,n in enumerate(noise):
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
                                 components=components, orf='hd', name='gwb', gamma_val = 4.333)
+
+    # Powerlaw Hellings-Downs free spectral index
+    if "pl_hd_freegam" == n:
+        if i==0:
+            crn = common_red_noise_block(psd='powerlaw', prior='log-uniform',
+                                components=components, orf='hd', name='gwb')
+        else:
+            crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
+                                components=components, orf='hd', name='gwb')
     
     # Powerlaw fixed-gamma Hellings-Downs cross-correlations only
     if "pl_hdnoauto_fixgam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
+                            components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
+                            components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
 
     # Free-spectrum Hellings-Downs
     if "freespec_hd" == n:
         if i==0:
             crn = common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = 'hd', name = 'gwb')
+                            orf = 'hd', name = 'gwb')
         else:
             crn += common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = 'hd', name = 'gwb')
+                            orf = 'hd', name = 'gwb')
 
     # Correlated CRN models - Dipole
     if "pl_dp" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='dipole', name='gw_dipole')
+                            components=components, orf='dipole', name='gw_dipole')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='dipole', name='gw_dipole')
+                            components=components, orf='dipole', name='gw_dipole')
     
     if "freespec_dp" == n:
         if i==0:
             crn = common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=60, orf='dipole', name='gw_dipole')
+                            components=60, orf='dipole', name='gw_dipole')
         else:
             crn += common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=60, orf='dipole', name='gw_dipole')
+                            components=60, orf='dipole', name='gw_dipole')
 
     # Correlated CRN models - Monopole
     # Powerlaw Monopole
@@ -320,11 +339,10 @@ for i,n in enumerate(noise):
     if "freespec_monopole" == n:
         if i==0:
             crn = common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=20, orf='monopole', name='gw_monopole')
+                            components=20, orf='monopole', name='gw_monopole')
         else:
             crn += common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=20, orf='monopole', name='gw_monopole')
-
+                            components=20, orf='monopole', name='gw_monopole')
 
 
 
@@ -561,7 +579,7 @@ for p in psrs:
         sw = mean_sw
 
         s += sw
-
+    
     for i, n in enumerate(noise):
         if "extra_red" == n:
             if len([ pn for pn in psrmodels if "RN" in pn ]) == 0:
@@ -577,146 +595,19 @@ for p in psrs:
 pta = signal_base.PTA(models)
 pta.set_default_params(params)
 
-if sampler == "bilby":
+if custom_results is not None and custom_results != "":
+    header_dir = custom_results
+else:
+    header_dir = "out_"+sampler
 
-    if custom_results is not None and custom_results != "":
-        header_dir = custom_results
-    else:
-        header_dir = "out"
+outDir = header_dir
 
-    outDir=header_dir+'/{0}_{1}'.format(p.name,results_dir)
-    try:
-        os.mkdir(outDir)
-    except:
-        pass
-    try:
-        with open(outDir+"/run_summary.txt","w") as f:
+with open(outDir+"/run_summary.txt","w") as f:
             print(pta.summary(), file=f)
-    except:
-        pass
-    try:
-        print(pta.params)
-        filename = outDir + "/pars.txt"
-        if os.path.exists(filename):
-            os.remove(filename)
-        with open(filename, "a") as f:
-        #f = open(filename, "a")
-            for par in pta.param_names:
-                f.write(par + '\n')
-    except:
-        pass
-    priors = bilby_warp.get_bilby_prior_dict(pta)
 
-    parameters = dict.fromkeys(priors.keys())
-    likelihood = bilby_warp.PTABilbyLikelihood(pta,parameters)
-
-    label = results_dir
+dill.dump(pta, file = open("/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/pta_objects/"+ptaname+".pkl", "wb"))
 
 
-    if pool is not None:
-        if nlive is not None:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=nlive, npool=pool, verbose=True, plot=True)
-        else:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=pool, verbose=True, plot=True)
-    else:
-        if nlive is not None:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=nlive, npool=1, verbose=True, plot=True)
-        else:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='dynesty', resume=True, nlive=1000, npool=1, verbose=True, plot=True)
 
-    results.plot_corner()
-
-elif sampler =="ptmcmc":
-    if custom_results is not None and custom_results != "":
-        header_dir = custom_results
-    else:
-        header_dir = "out_ptmcmc"
-    
-    #pta.set_default_params(params)
-    # set initial parameters drawn from prior
-    #x0 = np.hstack([p.sample() for p in pta.params])
-    irn_noise = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_SPGWER_noise_values.json"))
-    N = int(5e6)  # This will have to be played around with a bit
-    #x0 = np.hstack([p.sample() for p in pta.params])
-    x0 = np.hstack([ irn_noise[pn] for pn in pta.param_names[:-2] ])
-    xgw = np.hstack([p.sample() for p in pta.params[-2:]])
-    x0 = np.append(x0, xgw)
-    ndim = len(x0)
-
-    cov = np.diag(np.ones(ndim) * 0.01**2)
-    outDir = header_dir+'/{0}/'.format(results_dir)
-    try:
-        os.mkdir(outDir)
-    except:
-        pass
-    try:
-        with open(outDir+"/run_summary.txt","w") as f:
-            print(pta.summary(), file=f)
-    except:
-        pass
-    try:
-        print(pta.params)
-        filename = outDir + "/pars.txt"
-        if os.path.exists(filename):
-            os.remove(filename)
-        with open(filename, "a") as f:
-        #f = open(filename, "a")
-            for par in pta.param_names:
-                f.write(par + '\n')
-    except:
-        pass
-    sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, 
-                    outDir=outDir, resume=True)
-    
-
-    sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50, )
-
-elif sampler =="ppc":
-    priors = bilby_warp.get_bilby_prior_dict(pta)
-
-    parameters = dict.fromkeys(priors.keys())
-    likelihood = bilby_warp.PTABilbyLikelihood(pta,parameters)
-
-    label = results_dir
-    if custom_results is not None and custom_results != "":
-        header_dir = custom_results
-    else:
-        header_dir = "out_ppc"
-
-    outDir='/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/'+header_dir+'/{0}'.format(results_dir)
-    print(outDir)
-    try:
-        os.mkdir(outDir)
-    except:
-        pass
-    try:
-        with open(outDir+"/run_summary.txt","w") as f:
-            print(pta.summary(), file=f)
-    except:
-        pass
-    try:
-        print(pta.params)
-        filename = outDir + "/pars.txt"
-        if os.path.exists(filename):
-            os.remove(filename)
-        with open(filename, "a") as f:
-        #f = open(filename, "a")
-            for par in pta.param_names:
-                f.write(par + '\n')
-    except:
-        pass
-
-    if pool is not None:
-        if nlive is not None:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='PyPolyChord', resume=True, nlive=nlive, npool=pool, verbose=True, plot=True)
-        else:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='PyPolyChord', resume=True, nlive=1000, npool=pool, verbose=True, plot=True)
-    else:
-        if nlive is not None:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='PyPolyChord', resume=True, nlive=nlive, npool=1, verbose=True, plot=True)
-        else:
-            results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='PyPolyChord', resume=True, nlive=1000, npool=1, verbose=True, plot=True)
-
-results.plot_corner()
 
 

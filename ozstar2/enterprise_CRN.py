@@ -38,6 +38,8 @@ import argparse
 import time
 import faulthandler
 
+
+
 faulthandler.enable()
 ## Fix the plot colour to white
 plt.rcParams.update({'axes.facecolor':'white'})
@@ -98,13 +100,28 @@ if psrlist is not None:
 #else:
 ephemeris = 'DE440' # Static as not using bayesephem
 
+# The controller loads in the data from teh data file.
+#if controller:
 psrs = []
 for p, t in zip(parfiles, timfiles):
     #if "J1903" not in p and "J1455" not in p:
     if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p:
         psr = Pulsar(p, t, ephem=ephemeris)
         psrs.append(psr)
-        time.sleep(3)
+
+
+# All the workers are waiting to be sent data.
+
+
+# psrs = []
+# for p, t in zip(parfiles, timfiles):
+#     #if "J1903" not in p and "J1455" not in p:
+#     if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p:
+#         psr = Pulsar(p, t, ephem=ephemeris)
+#         psrs.append(psr)
+
+
+
 
 ## Get parameter noise dictionary
 params = {}
@@ -153,16 +170,16 @@ def dm_noise(log10_A,gamma,Tspan,components=30,option="powerlaw"):
     """
     nfreqs = 30
     if option=="powerlaw":
-      #pl = utils.powerlaw(log10_A=log10_A, gamma=gamma, components=components)
-      pl = utils.powerlaw(log10_A=log10_A, gamma=gamma)
-      #pl = enterprise.signals.gp_priors.powerlaw_no_components(log10_A=log10_A, gamma=gamma)
+    #pl = utils.powerlaw(log10_A=log10_A, gamma=gamma, components=components)
+        pl = utils.powerlaw(log10_A=log10_A, gamma=gamma)
+    #pl = enterprise.signals.gp_priors.powerlaw_no_components(log10_A=log10_A, gamma=gamma)
 
     #elif option=="turnover":
     #  fc = parameter.Uniform(self.params.sn_fc[0],self.params.sn_fc[1])
     #  pl = powerlaw_bpl(log10_A=log10_A, gamma=gamma, fc=fc,
     #                    components=components)
     dm_basis = utils.createfourierdesignmatrix_dm(nmodes = components,
-                                                  Tspan=Tspan)
+                                                Tspan=Tspan)
     dmn = gp_signals.BasisGP(pl, dm_basis, name='dm_gp')
 
     return dmn
@@ -211,19 +228,19 @@ for i,n in enumerate(noise):
     if "pl_nocorr_freegam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=None,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=None,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
 
     #power law, fixed 13/3 spectral index, no correlations
     if "pl_nocorr_fixgam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.3333,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.3333,
-                             components=120, orf=None, name='gw')
+                            components=120, orf=None, name='gw')
 
     #broken power law, free spectral index, no correlations
     if "bpl_nocorr_freegam" == n:
@@ -238,10 +255,10 @@ for i,n in enumerate(noise):
     if "freespec_nocorr" == n:
         if i==0:
             crn = common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = None, name = 'gw')
+                            orf = None, name = 'gw')
         else:
             crn += common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = None, name = 'gw')
+                            orf = None, name = 'gw')
 
     #Correlated CRN models - free ORF
     if "pl_orf_bins" == n:
@@ -258,7 +275,7 @@ for i,n in enumerate(noise):
                                 components=components, orf='spline_orf', name='gw_bins')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.33,
-                             components=components, orf='spline_orf', name='gw_bins')
+                            components=components, orf='spline_orf', name='gw_bins')
 
     # Powerlaw Hellings-Downs
     if "pl_hd_fixgam" == n:
@@ -268,41 +285,50 @@ for i,n in enumerate(noise):
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
                                 components=components, orf='hd', name='gwb', gamma_val = 4.333)
+            
+    # Powerlaw Hellings-Downs
+    if "pl_hd" == n:
+        if i==0:
+            crn = common_red_noise_block(psd='powerlaw', prior='log-uniform',
+                                components=components, orf='hd', name='gwb')
+        else:
+            crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
+                                components=components, orf='hd', name='gwb')
     
     # Powerlaw fixed-gamma Hellings-Downs cross-correlations only
     if "pl_hdnoauto_fixgam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
+                            components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
+                            components=components, orf='zero_diag_hd', name='gwb', gamma_val = 4.333)
 
     # Free-spectrum Hellings-Downs
     if "freespec_hd" == n:
         if i==0:
             crn = common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = 'hd', name = 'gwb')
+                            orf = 'hd', name = 'gwb')
         else:
             crn += common_red_noise_block(psd = 'spectrum', prior = "log-uniform", components = 60,
-                             orf = 'hd', name = 'gwb')
+                            orf = 'hd', name = 'gwb')
 
     # Correlated CRN models - Dipole
     if "pl_dp" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='dipole', name='gw_dipole')
+                            components=components, orf='dipole', name='gw_dipole')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                              components=components, orf='dipole', name='gw_dipole')
+                            components=components, orf='dipole', name='gw_dipole')
     
     if "freespec_dp" == n:
         if i==0:
             crn = common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=60, orf='dipole', name='gw_dipole')
+                            components=60, orf='dipole', name='gw_dipole')
         else:
             crn += common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=60, orf='dipole', name='gw_dipole')
+                            components=60, orf='dipole', name='gw_dipole')
 
     # Correlated CRN models - Monopole
     # Powerlaw Monopole
@@ -317,11 +343,10 @@ for i,n in enumerate(noise):
     if "freespec_monopole" == n:
         if i==0:
             crn = common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=20, orf='monopole', name='gw_monopole')
+                            components=20, orf='monopole', name='gw_monopole')
         else:
             crn += common_red_noise_block(psd='spectrum', prior='log-uniform',
-                              components=20, orf='monopole', name='gw_monopole')
-
+                            components=20, orf='monopole', name='gw_monopole')
 
 
 
@@ -713,6 +738,8 @@ elif sampler =="ppc":
         else:
             results = bilby.run_sampler(likelihood=likelihood, priors=priors, outdir=header_dir+'/{0}/'.format(results_dir), label=label, sampler='PyPolyChord', resume=True, nlive=1000, npool=1, verbose=True, plot=True)
 
-results.plot_corner()
+    results.plot_corner()
+
+
 
 

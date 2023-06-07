@@ -669,7 +669,7 @@ elif sampler =="ptmcmc":
                     outDir=outDir, resume=True)
     
 
-    sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50, )
+    sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50, writeHotChains = True, hotChain = True)
 
 elif sampler =="ppc":
     priors = bilby_warp.get_bilby_prior_dict(pta)

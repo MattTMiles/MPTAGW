@@ -1,23 +1,22 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=32
-#SBATCH --time=02:00:00
+#SBATCH --ntasks=128
+#SBATCH --time=06:00:00
 #SBATCH -o /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/job_outfiles/%x.out
-#SBATCH --mem=40gb
-#SBATCH --tmp=40gb
+#SBATCH --mem-per-cpu=2560MB
 
 source ~/.bashrc
 export OMP_NUM_THREADS=1
 ml conda
 
-conda activate gw
+conda activate mpippcgw
 
 cd /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2
 
 
 i=0
 while [ $i -lt 1 ]; do
-    mpirun python /home/mmiles/soft/GW/ozstar2/enterprise_CRN.py -partim /fred/oz002/users/mmiles/MPTA_GW/partim/ -results CRN_run -noise_search pl_nocorr_freegam -sampler ppc -partim /fred/oz002/users/mmiles/MPTA_GW/partim -noisefile /fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_WN_models.json -nlive 200 -alt_dir out_ppc/PTA_RUN/ -psrlist /fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list
+    mpirun python /home/mmiles/soft/GW/ozstar2/CRN_PPC_MPI.py -pta /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/pta_objects/PTA_CRN_ER.pkl -nlive 400 -results CRN_ER_run_N128run -alt_dir out_ppc/PTA_RUN/
 #    echo $?
 #    if [[ $? -eq 139 ]]; then
 #        echo "segfault !";

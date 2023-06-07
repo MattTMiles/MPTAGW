@@ -27,7 +27,7 @@ ulimit -s 16384
 i=0
 while [ $i -lt 1 ]; do
     #mpirun -np 8 python /home/mmiles/soft/GW/ozstar2/enterprise_CRN.py -partim /fred/oz002/users/mmiles/MPTA_GW/partim/ -results CRN_ER_run_$1 -noise_search pl_nocorr_freegam extra_red -sampler ptmcmc -partim /fred/oz002/users/mmiles/MPTA_GW/partim -noisefile /fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_WN_models.json -alt_dir out_ptmcmc/PTA_RUN/ -psrlist /fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list
-    python /home/mmiles/soft/GW/ozstar2/CRN_PTMCMC_MPI.py -pta /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/pta_objects/PTA_CRN_ER.pkl -results CRN_ER_run_$1 -alt_dir out_ptmcmc/PTA_RUN/
+    python /home/mmiles/soft/GW/ozstar2/CRN_PTMCMC_MPI.py -pta /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/pta_objects/PTA_FREESPEC_CRN_ER.pkl -results FREESPEC_ER_run_$1 -alt_dir out_ptmcmc/PTA_RUN/FREESPEC/
     if [[ "$?" -eq 139 ]]; then
         echo "segfault !";
         rm /fred/oz002/users/mmiles/MPTA_GW/partim/core*

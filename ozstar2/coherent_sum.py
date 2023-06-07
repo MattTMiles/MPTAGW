@@ -53,40 +53,77 @@ args = parser.parse_args()
 maindir = str(args.directory)
 
 
+def dp_orf(pos1, pos2):
+    """Hellings & Downs spatial correlation function."""
+    if np.all(pos1 == pos2):
+        return 1
+    else:
+        return np.dot(pos1, pos2)
+       
 
-for gpt in glob.glob(maindir+"/*")
-
-
-def co_coll(directory, pulsar):
-
-    maindir = directory+"/"
-    psr = Pulsar(maindir+pulsar+"_tdb.par", maindir+pulsar+".tim", ephem="DE440")
-
-    m, t_all = get_model_and_toas(maindir+pulsar+"_tdb.par", maindir+pulsar+".tim", allow_name_mixing=True)
-    psrname = psr.name
-    f = pint.fitter.DownhillGLSFitter(toas=t_all, model=m)
-    f.fit_toas(maxiter=3, debug=True)
-
-    noise_dims = f.current_state.model.noise_model_dimensions(f.toas)
-    ntmpar = len(f.model.free_params)
-
-    p0 = noise_dims["pl_gw_noise"][0] + ntmpar +1
-    p1 = noise_dims["pl_gw_noise"][0] + ntmpar +1 + noise_dims["pl_gw_noise"][1]
-
-    xhat = f.current_state.xhat
-    ab_coeffs = xhat[p0:p1]/f.current_state.norm[p0:p1]
-
-    Tspan = np.max(psr.toas) - np.min(psr.toas)
-
-    f_coeffs = np.linspace(1/Tspan, ((p1-p0)/2)/Tspan, int((p1-p0)/2))
+def hd_orf(pos1, pos2):
+    """Hellings & Downs spatial correlation function."""
+    if np.all(pos1 == pos2):
+        return 0.5
+    else:
+        omc2 = (1 - np.dot(pos1, pos2)) / 2
+        return 1.5 * omc2 * np.log(omc2) - 0.25 * omc2 + 0.5
 
 
-    return ab_coeffs, f_coeffs
+par1909 = maindir+"/J1909-3744_tdb.par"
+tim1909 = maindir+"/J1909-3744.tim"
+
+psr1909 = Pulsar(par1909, tim1909, ephem="DE440")
 
 
 
-ab, f = co_coll(maindir, pulsar)
 
+ct_ps = []
 
-np.save(maindir+"/"+pulsar+"_ab_coeffs.npy", ab)
-np.save(maindir+"/"+pulsar+"_freq_coeffs.npy", f)
+weights = []
+
+for gptfile in glob.glob(maindir+"/*gpt.npy"):
+    parfile = gptfile.replace("_gpt.npy", "_tdb.par")
+    timfile = gptfile.replace("_gpt.npy", ".tim")
+
+    gpt = np.load(gptfile)
+
+    psr = Pulsar(parfile, timfile, ephem="DE440")
+
+    corr = hd_orf(psr1909.pos,psr.pos)
+    #corr = dp_orf(psr1909.pos,psr.pos)
+
+    weights.append(corr)
+    ct_p = corr*gpt
+    
+
+    ct_ps.append(ct_p)
+
+time = np.load("J1909-3744_time_series.npy")
+#time /= (86400.)
+ct_ps_sum = np.sum(ct_ps,axis=0)
+
+total_weights = np.sum(weights)
+
+gw_t_total = ct_ps_sum/total_weights
+
+plt.figure(figsize=(15,5))
+plt.plot(time, gw_t_total,linestyle="",marker=".")
+plt.savefig("weighted_total.png")
+plt.clf()
+
+ct_ps_sum1 = np.sum(ct_ps[::2],axis=0)
+ct_ps_sum2 = np.sum(ct_ps[1::2],axis=0)
+
+weights1 = np.sum(weights[::2])
+weights2 = np.sum(weights[1::2])
+
+gw_firsthalf = ct_ps_sum1/weights1
+gw_secondhalf = ct_ps_sum2/weights2
+
+plt.figure(figsize=(15,5))
+plt.plot(time, gw_firsthalf,linestyle="",marker=".",label = "first")
+plt.plot(time, gw_secondhalf,linestyle="",marker=".",label = "second")
+plt.legend()
+plt.savefig("weighted_split.png")
+plt.clf()

@@ -25,6 +25,8 @@ from enterprise_extensions import timing
 from enterprise_extensions.frequentist import optimal_statistic as opt_stat
 import time
 import h5py
+import dill
+
 
 #import pint
 #from pint.models import *
@@ -79,12 +81,15 @@ def high_frequencies(freqs):
 low_freq = selections.Selection(low_frequencies)
 high_freq = selections.Selection(high_frequencies)
 
-psrlist = None
-
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
+psrlist=[ x.strip("\n") for x in open(psr_list).readlines() ]
 datadir='/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/real_data/from_partim/'
 
 parfiles=sorted(glob.glob(datadir+'*.par'))
 timfiles=sorted(glob.glob(datadir+'*.tim'))
+if psrlist is not None:
+    parfiles = [x for x in parfiles if x.split('/')[-1].split('.')[0] in psrlist]
+    timfiles = [x for x in timfiles if x.split('/')[-1].split('.')[0] in psrlist]
 
 timfiles = [ tim  for tim in timfiles if "all" not in tim ]
 timfiles = [ tim  for tim in timfiles if "off" not in tim ]
@@ -98,12 +103,11 @@ ephemeris =  'DE440'
 
 for p, t in zip(parfiles,timfiles):
     #if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p and "J1713" not in p:
-    if "J1903" not in p and "J1455" not in p and "J1933-6211" not in p and "J1643" not in p and "J1903" not in p and "J1802" not in p and "J1713" not in p:
+    if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p and "J1902" not in p:
         print(p)
         psr=Pulsar(p,t,ephem=ephemeris)
         #print(psr)
         psrs.append(psr)
-        time.sleep(1)
 
 
 
@@ -142,7 +146,7 @@ ecorr = eparameter.Constant()
 
 models = []
 
-crn = blocks.common_red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=Tspan, components=5,gamma_val=4.33, name='gw')
+crn = blocks.common_red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=Tspan, components=30,gamma_val=4.33, name='gw')
 
 #s = gp_signals.TimingModel()
 #s += blocks.white_noise_block(vary=False, inc_ecorr=True, select='backend')
@@ -378,6 +382,8 @@ pta = signal_base.PTA(models)
 
 pta.set_default_params(noisedict)
 
+#pta = dill.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/pta_objects/PTA_CRN_ER.pkl","rb"))
+
 ostat = opt_stat.OptimalStatistic(psrs, pta=pta, orf='hd', bayesephem=False)
 ostat_dip = opt_stat.OptimalStatistic(psrs, pta=pta, orf='dipole',bayesephem=False)
 ostat_mono = opt_stat.OptimalStatistic(psrs, pta=pta, orf='monopole',bayesephem=False)
@@ -387,6 +393,19 @@ ostat_mono = opt_stat.OptimalStatistic(psrs, pta=pta, orf='monopole',bayesephem=
 
 with open('/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_SPGWER_noise_values.json', "r") as f:
     ml_params = json.load(f)
+
+chain_file = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/CRN_ER_masterChain_0206.npy"
+marg_chain = np.load(chain_file)
+pars_file = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/CRN_ER_run_1/pars.txt"
+
+parlist = list(open(pars_file))
+parlist = [ par.strip("\n") for par in parlist ]
+
+marg_no_gam = np.delete(marg_chain,-6,1)
+parlist.remove("gw_gamma")
+
+mxi, mrho, msig, mOS, mOS_SNR = ostat.compute_noise_marginalized_os(marg_no_gam, param_names=parlist, N=1000)
+print(mOS, mOS_SNR)
 
 
 xi, rho, sig, OS, OS_sig = ostat.compute_os(params=ml_params)
@@ -401,13 +420,14 @@ print(OS_mono, OS_sig_mono, OS_mono/OS_sig_mono)
 #ximult, rhomult, sigmult, OSmult, OS_sigmult = opt_stat.OptimalStatistic.compute_multiple_corr_os(params=ml_params, psd='powerlaw', fgw=None, correlations=['dipole', 'hd'])
 #print(OSmult, OS_sigmult, OSmult/OS_sigmult)
 
+mrho_med = np.median(mrho, axis=0)
+msig_med = np.median(msig, axis=0)
 
+idx=np.argsort(mxi)
 
-idx=np.argsort(xi)
-
-xi_sorted = xi[idx]
-rho_sorted = rho[idx]
-sig_sorted = sig[idx]
+xi_sorted = mxi[idx]
+rho_sorted = mrho_med[idx]
+sig_sorted = msig_med[idx]
 
 
 npsr=np.shape(psrs)[0]
@@ -416,9 +436,9 @@ gof=np.zeros(npsr)
 rho2=np.zeros(npsr)
 sig2=np.zeros(npsr)
 
-rho_expected=2.51e-29*get_HD_curve(xi)
+rho_expected=1.82e-29*get_HD_curve(xi)
 
-f = open("crosscorr.dat", "w")
+f = open("crosscorr_noisemarg.dat", "w")
 
 i=0
 for ii in range(npsr-1):
@@ -474,7 +494,7 @@ zeta=np.linspace(0.01,180,100)
 
 HD=get_HD_curve(zeta)
 
-plt.plot(zeta, 2.51e-29*HD, ls='--', label='Hellings-Downs', color='C0', lw=1.5)
+plt.plot(zeta, 1.82e-29*HD, ls='--', label='Hellings-Downs', color='C0', lw=1.5)
 plt.plot(zeta, zeta*0.0+OS_mono, ls='--', label='Monopole', color='C1', lw=1.5)
 plt.plot(zeta, OS_dip*np.cos(zeta*np.pi/180), ls='--', label='Dipole', color='C2', lw=1.5)
 
@@ -487,4 +507,9 @@ plt.legend(loc=4)
 
 plt.tight_layout()
 #plt.show()
-plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/real_data/from_partim/OS_quicklook_simulated_most_inc.png")
+plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/real_data/from_partim/OS_quicklook_noisemarg_no1092_signalbinning.png")
+plt.clf()
+
+plt.hist(mOS, bins=30, density=True, histtype="step")
+plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/real_data/from_partim/Marg_OS_dist_no1902_signalbinning.png")
+plt.clf()

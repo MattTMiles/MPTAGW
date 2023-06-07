@@ -1,0 +1,221 @@
+enterprise v3.3.3,  Python v3.10.11
+==========================================================================================
+
+Signal Name                              Signal Class                   no. Parameters      
+==========================================================================================
+J0030+0451_marginalizing_linear_timing_model TimingModel                    0                   
+
+params:
+__________________________________________________________________________________________
+J0030+0451_measurement_noise             MeasurementNoise               0                   
+
+params:
+J0030+0451_KAT_MKBF_efac:Constant=1.04141668995794                                        
+__________________________________________________________________________________________
+J0030+0451_n_earth                       Deterministic                  1                   
+
+params:
+J0030+0451_n_earth_n_earth:Uniform(pmin=0, pmax=20)                                       
+__________________________________________________________________________________________
+J0030+0451_red_noise                     FourierBasisGP                 2                   
+
+params:
+J0030+0451_red_noise_log10_A:Uniform(pmin=-20, pmax=-12)                                  
+J0030+0451_red_noise_gamma:Uniform(pmin=0, pmax=7)                                        
+__________________________________________________________________________________________
+J0030+0451_gw                            FourierBasisGP                 2                   
+
+params:
+gw_log10_A:Uniform(pmin=-18, pmax=-11)                                                    
+gw_gamma:Uniform(pmin=0, pmax=7)                                                          
+__________________________________________________________________________________________
+J0101-6422_marginalizing_linear_timing_model TimingModel                    0                   
+
+params:
+__________________________________________________________________________________________
+J0101-6422_measurement_noise             MeasurementNoise               0                   
+
+params:
+J0101-6422_KAT_MKBF_efac:Constant=1.02542464984014                                        
+__________________________________________________________________________________________
+J0101-6422_n_earth                       Deterministic                  0                   
+
+params:
+J0101-6422_n_earth_n_earth:Constant=4                                                     
+__________________________________________________________________________________________
+J0101-6422_red_noise                     FourierBasisGP                 2                   
+
+params:
+J0101-6422_red_noise_log10_A:Uniform(pmin=-20, pmax=-12)                                  
+J0101-6422_red_noise_gamma:Uniform(pmin=0, pmax=7)                                        
+__________________________________________________________________________________________
+J0101-6422_gw                            FourierBasisGP                 2                   
+
+params:
+gw_log10_A:Uniform(pmin=-18, pmax=-11)                                                    
+gw_gamma:Uniform(pmin=0, pmax=7)                                                          
+__________________________________________________________________________________________
+J0125-2327_marginalizing_linear_timing_model TimingModel                    0                   
+
+params:
+__________________________________________________________________________________________
+J0125-2327_measurement_noise             MeasurementNoise               0                   
+
+params:
+J0125-2327_KAT_MKBF_efac:Constant=1.00915050632291                                        
+__________________________________________________________________________________________
+J0125-2327_tnequad                       TNEquadNoise                   0                   
+
+params:
+J0125-2327_KAT_MKBF_log10_tnequad:Constant=-6.95129590949168                              
+__________________________________________________________________________________________
+J0125-2327_ecorr_sherman-morrison        EcorrKernelNoise               0                   
+
+params:
+J0125-2327_KAT_MKBF_log10_ecorr:Constant=-6.74453162087936                                
+__________________________________________________________________________________________
+J0125-2327_dm_gp                         BasisGP                        2                   
+
+params:
+J0125-2327_dm_gp_log10_A:Uniform(pmin=-20, pmax=-12)                                      
+J0125-2327_dm_gp_gamma:Uniform(pmin=0, pmax=7)                                            
+__________________________________________________________________________________________
+J0125-2327_n_earth                       Deterministic                  1                   
+
+params:
+J0125-2327_n_earth_n_earth:Uniform(pmin=0, pmax=20)                                       
+__________________________________________________________________________________________
+J0125-2327_red_noise                     FourierBasisGP                 2                   
+
+params:
+J0125-2327_red_noise_log10_A:Uniform(pmin=-20, pmax=-12)                                  
+J0125-2327_red_noise_gamma:Uniform(pmin=0, pmax=7)                                        
+__________________________________________________________________________________________
+J0125-2327_gw                            FourierBasisGP                 2                   
+
+params:
+gw_log10_A:Uniform(pmin=-18, pmax=-11)                                                    
+gw_gamma:Uniform(pmin=0, pmax=7)                                                          
+__________________________________________________________________________________________
+J0610-2100_marginalizing_linear_timing_model TimingModel                    0                   
+
+params:
+__________________________________________________________________________________________
+J0610-2100_measurement_noise             MeasurementNoise               0                   
+
+params:
+J0610-2100_KAT_MKBF_efac:Constant=1.04636401922917                                        
+__________________________________________________________________________________________
+J0610-2100_dm_gp                         BasisGP                        2                   
+
+params:
+J0610-2100_dm_gp_log10_A:Uniform(pmin=-20, pmax=-12)                                      
+J0610-2100_dm_gp_gamma:Uniform(pmin=0, pmax=7)                                            
+__________________________________________________________________________________________
+J0610-2100_chrom_gp                      BasisGP                        2                   
+
+params:
+J0610-2100_chrom_gp_log10_A:Uniform(pmin=-20, pmax=-12)                                   
+J0610-2100_chrom_gp_gamma:Uniform(pmin=0, pmax=7)                                         
+J0610-2100_chrom_gp_idx:Constant=4                                                        
+__________________________________________________________________________________________
+J0610-2100_n_earth                       Deterministic                  0                   
+
+params:
+J0610-2100_n_earth_n_earth:Constant=4                                                     
+__________________________________________________________________________________________
+J0610-2100_red_noise                     FourierBasisGP                 2                   
+
+params:
+J0610-2100_red_noise_log10_A:Uniform(pmin=-20, pmax=-12)                                  
+J0610-2100_red_noise_gamma:Uniform(pmin=0, pmax=7)                                        
+__________________________________________________________________________________________
+J0610-2100_gw                            FourierBasisGP                 2                   
+
+params:
+gw_log10_A:Uniform(pmin=-18, pmax=-11)                                                    
+gw_gamma:Uniform(pmin=0, pmax=7)                                                          
+__________________________________________________________________________________________
+J0613-0200_marginalizing_linear_timing_model TimingModel                    0                   
+
+params:
+__________________________________________________________________________________________
+J0613-0200_measurement_noise             MeasurementNoise               0                   
+
+params:
+J0613-0200_KAT_MKBF_efac:Constant=0.974162208140209                                       
+__________________________________________________________________________________________
+J0613-0200_tnequad                       TNEquadNoise                   0                   
+
+params:
+J0613-0200_KAT_MKBF_log10_tnequad:Constant=-6.5829772323854                               
+__________________________________________________________________________________________
+J0613-0200_n_earth                       Deterministic                  1                   
+
+params:
+J0613-0200_n_earth_n_earth:Uniform(pmin=0, pmax=20)                                       
+__________________________________________________________________________________________
+J0613-0200_chrom_gp                      BasisGP                        2                   
+
+params:
+J0613-0200_chrom_gp_log10_A:Uniform(pmin=-20, pmax=-12)                                   
+J0613-0200_chrom_gp_gamma:Uniform(pmin=0, pmax=7)                                         
+J0613-0200_chrom_gp_idx:Constant=4                                                        
+__________________________________________________________________________________________
+J0613-0200_red_noise                     FourierBasisGP                 2                   
+
+params:
+J0613-0200_red_noise_log10_A:Uniform(pmin=-20, pmax=-12)                                  
+J0613-0200_red_noise_gamma:Uniform(pmin=0, pmax=7)                                        
+__________________________________________________________________________________________
+J0613-0200_gw                            FourierBasisGP                 2                   
+
+params:
+gw_log10_A:Uniform(pmin=-18, pmax=-11)                                                    
+gw_gamma:Uniform(pmin=0, pmax=7)                                                          
+__________________________________________________________________________________________
+J0614-3329_marginalizing_linear_timing_model TimingModel                    0                   
+
+params:
+__________________________________________________________________________________________
+J0614-3329_measurement_noise             MeasurementNoise               0                   
+
+params:
+J0614-3329_KAT_MKBF_efac:Constant=0.971621471479524                                       
+__________________________________________________________________________________________
+J0614-3329_dm_gp                         BasisGP                        2                   
+
+params:
+J0614-3329_dm_gp_log10_A:Uniform(pmin=-20, pmax=-12)                                      
+J0614-3329_dm_gp_gamma:Uniform(pmin=0, pmax=7)                                            
+__________________________________________________________________________________________
+J0614-3329_n_earth                       Deterministic                  1                   
+
+params:
+J0614-3329_n_earth_n_earth:Uniform(pmin=0, pmax=20)                                       
+__________________________________________________________________________________________
+J0614-3329_gp_sw                         BasisGP                        2                   
+
+params:
+J0614-3329_gp_sw_log10_A:Uniform(pmin=-10, pmax=1)                                        
+J0614-3329_gp_sw_gamma:Uniform(pmin=-4, pmax=4)                                           
+__________________________________________________________________________________________
+J0614-3329_red_noise                     FourierBasisGP                 2                   
+
+params:
+J0614-3329_red_noise_log10_A:Uniform(pmin=-20, pmax=-12)                                  
+J0614-3329_red_noise_gamma:Uniform(pmin=0, pmax=7)                                        
+__________________________________________________________________________________________
+J0614-3329_gw                            FourierBasisGP                 2                   
+
+params:
+gw_log10_A:Uniform(pmin=-18, pmax=-11)                                                    
+gw_gamma:Uniform(pmin=0, pmax=7)                                                          
+__________________________________________________________________________________________
+==========================================================================================
+Total params: 43
+Varying params: 30
+Common params: 12
+Fixed params: 13
+Number of pulsars: 6
+

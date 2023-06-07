@@ -15,11 +15,10 @@ import numpy as np
 from enterprise_extensions import model_utils
 import matplotlib.pyplot as plt
 import corner
-import glob
 
 
 def chain_corner_from_dir(dirname, parstxt):
-    chainfile = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/" + dirname + '/chain_1.txt'
+    chainfile = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/FREESPEC/" + dirname + '/chain_1.txt'
 
     if not os.path.exists(chainfile):
         
@@ -37,14 +36,14 @@ def chain_corner_from_dir(dirname, parstxt):
     plt.close()
     print("Made {}".format(chainfile.replace('.txt', '{}_trace.png'.format(dirname))))
     
-    chain_gamma = chain_i[:,-6]
-    chain_amp = chain_i[:,-5]
-    chain_gw = np.vstack([chain_gamma,chain_amp])
-    pp = model_utils.PostProcessing(chain_gw.T, [pars[-2],pars[-1]], burn_percentage=0)
+    #chain_gamma = chain_i[:,-6]
+    #chain_amp = chain_i[:,-5]
+    chain_rho_bins = np.vstack(chain_i[:,-30:])
+    pp = model_utils.PostProcessing(chain_rho_bins, pars[-30:], burn_percentage=0)
     pp.plot_trace()
-    plt.savefig(chainfile.replace('.txt', '{}_GW_trace.png'.format(dirname)))
+    plt.savefig(chainfile.replace('.txt', '{}_rho_bins_trace.png'.format(dirname)))
     plt.close()
-    print("Made {}".format(chainfile.replace('.txt', '{}_GW_trace.png'.format(dirname))))
+    print("Made {}".format(chainfile.replace('.txt', '{}_rho_bins_trace.png'.format(dirname))))
     
 
     '''
@@ -69,4 +68,5 @@ def chain_corner_from_dir(dirname, parstxt):
     plt.savefig(figsavename, dpi=300, bbox_inches='tight')
     plt.close()
     '''
-chain_corner_from_dir(sys.argv[1], "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/" + sys.argv[1]+"/pars.txt")
+chain_corner_from_dir(sys.argv[1], "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/FREESPEC/" + sys.argv[1]+"/pars.txt")
+

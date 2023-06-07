@@ -98,7 +98,6 @@ else:
 for p, t in zip(parfiles, timfiles):
     psr = Pulsar(p, t, ephem=ephemeris)
     psrs.append(psr)
-    time.sleep(3)
 
 ## Get parameter noise dictionary
 params = {}
