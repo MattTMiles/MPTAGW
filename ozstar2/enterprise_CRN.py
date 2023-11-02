@@ -105,9 +105,9 @@ ephemeris = 'DE440' # Static as not using bayesephem
 psrs = []
 for p, t in zip(parfiles, timfiles):
     #if "J1903" not in p and "J1455" not in p:
-    if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p:
-        psr = Pulsar(p, t, ephem=ephemeris)
-        psrs.append(psr)
+    #if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p:
+    psr = Pulsar(p, t, ephem=ephemeris)
+    psrs.append(psr)
 
 
 # All the workers are waiting to be sent data.

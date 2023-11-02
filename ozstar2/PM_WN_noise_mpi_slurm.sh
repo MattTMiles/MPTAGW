@@ -1,16 +1,15 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
-#SBATCH --ntasks=32
-#SBATCH --time=01:00:00
+#SBATCH --ntasks=16
+#SBATCH --time=02:00:00
 #SBATCH -o /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/job_outfiles/%x.out
-#SBATCH --mem=10gb
-#SBATCH --tmp=10gb
+#SBATCH --mem-per-cpu=2gb
 
 source ~/.bashrc
 export OMP_NUM_THREADS=1
 ml conda
 
-conda activate gw
+conda activate mpippcgw
 
 cd /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2
 

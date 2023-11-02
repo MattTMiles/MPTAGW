@@ -187,6 +187,17 @@ def lazy_noise_reducer_ecorr_gauss(parfile, timfile, sw_extract = False, gw_subt
     fig1.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/clock_residuals/"+pulsar+"_residual_plot.png")
     plt.close()
 
+    res_WA = res_df.groupby("Rounded MJD").apply(weighted_average, "Noise subtracted (s)", "WN Scaled Uncertainty (s)")
+    unc_WA = res_df.groupby("Rounded MJD").apply(uncertainty_scaled, "WN Scaled Uncertainty (s)")
+    unique_mjd_rounded = np.array(sorted(list(set(res_df["Rounded MJD"].values))))
+    fig2, ax2 = plt.subplots()
+    ax2.errorbar(x=unique_mjd_rounded, y=res_WA, yerr=unc_WA, linestyle="", marker=".", label="Averaged, clock not corrected")
+    ax2.legend()
+    ax2.set_xlabel("MJD")
+    ax2.set_ylabel("Residuals (s)")
+    fig2.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/clock_residuals/"+pulsar+"_ave_residual_plot.png")
+    plt.close()
+
     return glsfit, m, res_df, noise_df
     
 

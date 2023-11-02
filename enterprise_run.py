@@ -291,8 +291,8 @@ if "gw_const_gamma_wide" in noise:
     log10_A_gw = parameter.Uniform(-18,-9)('log10_A_gw')
     gamma_gw = parameter.Constant(4.33)('gamma_gw')
 if "lin_exp_gw_const_gamma_wide" in noise:
-    #log10_A_gw = bilby_warp.linearExponential(-18,-9,'log10_A_gw')
-    log10_A_gw = parameter.LinearExp(-18,-9)('log10_A_gw')
+    log10_A_gw = bilby_warp.linearExponential(-18,-9,'log10_A_gw')
+    #log10_A_gw = parameter.LinearExp(-18,-9)('log10_A_gw')
     gamma_gw = parameter.Constant(4.33)('gamma_gw')
 
 if "band_low"in noise:

@@ -12,7 +12,7 @@ export OMP_NUM_THREADS=1
 
 ml conda
 
-conda activate gw
+conda activate mpippcgw
 
 cd /fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2
 

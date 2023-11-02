@@ -30,16 +30,17 @@ def chain_corner_from_dir(dirname, parstxt):
     pars = list(f.readlines())
     f.close()
     
-    pp = model_utils.PostProcessing(chain_i, pars, burn_percentage=0)
-    pp.plot_trace()
-    plt.savefig(chainfile.replace('.txt', '{}_trace.png'.format(dirname)))
-    plt.close()
-    print("Made {}".format(chainfile.replace('.txt', '{}_trace.png'.format(dirname))))
+    # pp = model_utils.PostProcessing(chain_i, pars, burn_percentage=0)
+    # pp.plot_trace()
+    # plt.savefig(chainfile.replace('.txt', '{}_trace.png'.format(dirname)))
+    # plt.close()
+    # print("Made {}".format(chainfile.replace('.txt', '{}_trace.png'.format(dirname))))
     
     #chain_gamma = chain_i[:,-6]
     #chain_amp = chain_i[:,-5]
-    chain_rho_bins = np.vstack(chain_i[:,-30:])
-    pp = model_utils.PostProcessing(chain_rho_bins, pars[-30:], burn_percentage=0)
+    chain_rho_bins = np.vstack(chain_i[:,-34:])
+    chain_rho_bins = chain_rho_bins[:,:30]
+    pp = model_utils.PostProcessing(chain_rho_bins, pars[-30:], burn_percentage=0.8)
     pp.plot_trace()
     plt.savefig(chainfile.replace('.txt', '{}_rho_bins_trace.png'.format(dirname)))
     plt.close()

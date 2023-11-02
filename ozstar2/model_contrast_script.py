@@ -78,9 +78,9 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
     psrname = m1.name.split("/")[-1].replace("_tdb.par","")
 
     glsfit1 = pint.fitter.GLSFitter(toas=t_all, model=m1)
-    glsfit1.fit_toas(maxiter=3)
+    glsfit1.fit_toas(maxiter=10)
     glsfit2 = pint.fitter.GLSFitter(toas=t_all, model=m2)
-    glsfit2.fit_toas(maxiter=3)
+    glsfit2.fit_toas(maxiter=10)
     
     mjds = glsfit1.toas.get_mjds()
     noise_df1 = pd.DataFrame.from_dict(glsfit1.resids.noise_resids)
@@ -146,29 +146,29 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
     for col in noise_df1.columns:
         if "noise" in col:
             #if col != "ecorr_noise" and  col != "SW_noise":
-            if col != "ecorr_noise":
-                if not gw_subtract:
-                    if col != "pl_gw_noise":
-                        if "chrom" in col:
-                            lab = "Chromatic Noise"
-                            clr = "tab:orange"
-                        elif "DM" in col:
-                            lab = "DM Noise"
-                            clr = "tab:green"
-                        elif "red" in col:
-                            lab = "Red Noise"
-                            clr = "tab:red"
-                        elif "SW" in col:
-                            lab = "Solar Wind"
-                            clr = "tab:brown"
-                        else:
-                            lab = col
-                            clr = "tab:purple"
-                        axs[1].plot(noise_df1["MJD"], noise_df1[col], ".", label = lab, zorder=2, alpha=0.4, color=clr)
-                        noisedf_ave1[col+" ave"] = noise_df1.groupby("Rounded MJD").apply(weighted_average, col, "Scaled_unc")
-                else:
-                    axs[1].plot(noise_df1["MJD"], noise_df1[col], ".", label = col, zorder=2, alpha=0.4)
-    
+            #if col != "ecorr_noise":
+            if not gw_subtract:
+                if col != "pl_gw_noise":
+                    if "chrom" in col:
+                        lab = "Chromatic Noise"
+                        clr = "tab:orange"
+                    elif "DM" in col:
+                        lab = "DM Noise"
+                        clr = "tab:green"
+                    elif "red" in col:
+                        lab = "Red Noise"
+                        clr = "tab:red"
+                    elif "SW" in col:
+                        lab = "Solar Wind"
+                        clr = "tab:brown"
+                    else:
+                        lab = col
+                        clr = "tab:purple"
+                    axs[1].plot(noise_df1["MJD"], noise_df1[col], ".", label = lab, zorder=2, alpha=0.4, color=clr)
+                    noisedf_ave1[col+" ave"] = noise_df1.groupby("Rounded MJD").apply(weighted_average, col, "Scaled_unc")
+            else:
+                axs[1].plot(noise_df1["MJD"], noise_df1[col], ".", label = col, zorder=2, alpha=0.4)
+
     axs[1].set_title(psrname + " residuals + correct noise", fontsize=font)
     axs[1].legend()
     axs[1].set_ylabel("Residuals (s)")
@@ -180,24 +180,27 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
             #if col != "ecorr_noise" and  col != "SW_noise":
             if col != "ecorr_noise":
                 if not gw_subtract:
-                    if col != "pl_gw_noise":
-                        if "chrom" in col:
-                            lab = "Chromatic Noise"
-                            clr = "tab:orange"
-                        elif "dm" in col:
-                            lab = "DM Noise"
-                            clr = "tab:green"
-                        elif "red" in col:
-                            lab = "Red Noise"
-                            clr = "tab:red"
-                        elif "SW" in col:
-                            lab = "Solar Wind"
-                            clr = "tab:brown"
-                        else:
-                            lab = col
-                            clr = "tab:purple"
-                        axs[2].plot(noise_df2["MJD"], noise_df2[col], ".", label = lab, zorder=2, alpha=0.4,color=clr)
-                        noisedf_ave2[col+" ave"] = noise_df2.groupby("Rounded MJD").apply(weighted_average, col, "Scaled_unc")
+                    #if col != "pl_gw_noise":
+                    if "chrom" in col:
+                        lab = "Chromatic Noise"
+                        clr = "tab:orange"
+                    elif "dm" in col:
+                        lab = "DM Noise"
+                        clr = "tab:green"
+                    elif "red" in col:
+                        lab = "Red Noise"
+                        clr = "tab:red"
+                    elif "SW" in col:
+                        lab = "Solar Wind"
+                        clr = "tab:brown"
+                    elif "gw" in col:
+                        lab = "SGWB"
+                        clr = "grey"
+                    else:
+                        lab = col
+                        clr = "tab:purple"
+                    axs[2].plot(noise_df2["MJD"], noise_df2[col], ".", label = lab, zorder=2, alpha=0.4,color=clr)
+                    noisedf_ave2[col+" ave"] = noise_df2.groupby("Rounded MJD").apply(weighted_average, col, "Scaled_unc")
                 else:
                     axs[2].plot(noise_df2["MJD"], noise_df2[col], ".", label = col, zorder=2, alpha=0.4)
     
@@ -215,16 +218,56 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
     #noisedf_ave1["Residuals ave"] = 
 
 
+    figsolo, axsolo = plt.subplots(figsize=(16,7))
+    axsolo.errorbar(x=noise_df1["MJD"], y=glsfit1.resids.resids.value*1e6,yerr=glsfit1.toas.get_errors().to(u.s).value*1e6,linestyle="",marker=".", label = "Residuals",alpha=0.2,zorder=1)
+    for col in noise_df1.columns:
+        if "noise" in col:
+            #if col != "ecorr_noise" and  col != "SW_noise":
+            #if col != "ecorr_noise":
+            if not gw_subtract:
+                if col != "pl_gw_noise":
+                    if "chrom" in col:
+                        lab = "Chromatic Noise"
+                        clr = "tab:orange"
+                    elif "DM" in col:
+                        lab = "DM Noise"
+                        clr = "tab:green"
+                    elif "red" in col:
+                        lab = "Red Noise"
+                        clr = "tab:red"
+                    elif "SW" in col:
+                        lab = "Solar Wind"
+                        clr = "tab:brown"
+                    else:
+                        lab = col
+                        clr = "tab:purple"
+                    axsolo.plot(noise_df1["MJD"], noise_df1[col]*1e6, ".", label = lab, zorder=2, alpha=0.4, color=clr)
+                    #noisedf_ave1[col+" ave"] = noise_df1.groupby("Rounded MJD").apply(weighted_average, col, "Scaled_unc")
+            else:
+                axsolo.plot(noise_df1["MJD"], noise_df1[col]*1e6, ".", label = col, zorder=2, alpha=0.4)
+
+    axsolo.set_title(psrname + " residuals and noise processes", fontsize=font)
+    axsolo.legend(fontsize=font)
+    axsolo.set_ylabel(r"Residuals ($\mu$s)")
+    axsolo.set_xlabel("MJD")
+    axsolo.xaxis.get_label().set_fontsize(font)
+    axsolo.yaxis.get_label().set_fontsize(font)
+    axsolo.set_xlabel("MJD")
+    axsolo.tick_params(axis="both", labelsize=font)
+
+    figsolo.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/misspec_comparisons/"+pulsar+"/"+pulsar+"_noise_solo.png")
+    plt.close()
+
     whitened_residuals1 = glsfit1.resids.resids.value
     for col in noise_df1.columns:
         if "noise" in col:
             #if col != "ecorr_noise" and  col != "SW_noise":
-            if col != "ecorr_noise":
-                if not gw_subtract:
-                    if col != "pl_gw_noise":
-                        whitened_residuals1 -= noise_df1[col].values
-                else:
+            #if col != "ecorr_noise":
+            if not gw_subtract:
+                if col != "pl_gw_noise":
                     whitened_residuals1 -= noise_df1[col].values
+            else:
+                whitened_residuals1 -= noise_df1[col].values
     
     whitened_residuals2 = glsfit2.resids.resids.value
     for col in noise_df2.columns:
@@ -268,11 +311,11 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
 
     unique_mjd_rounded = np.array(sorted(list(set(noise_df1["Rounded MJD"].values))))
 
-    fig2, axs2 = plt.subplots(3,figsize=(16,15))
+    fig2, axs2 = plt.subplots(3,figsize=(16,20))
 
     axs2[0].errorbar(x=unique_mjd_rounded, y=noisedf_ave2["Residuals ave"].values*1e6,yerr=noisedf_ave2["unc ave"].values*1e6,linestyle="",marker=".", label = "Residuals")
     axs2[0].set_title(psrname + ": frequency averaged residuals", fontsize=font)
-    axs2[0].legend(fontsize=font)
+    axs2[0].legend(fontsize=font, loc="upper left")
     axs2[0].set_ylabel("Residuals ($\mu$s)")
 
     axs2[1].errorbar(x=unique_mjd_rounded, y=(noisedf_ave2["Residuals ave"].values - noisedf_ave2["pl_DM_noise ave"].values)*1e6,yerr=noisedf_ave2["unc ave"].values*1e6,linestyle="",marker=".", label = "Residuals")
@@ -299,9 +342,9 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
                         else:
                             lab = col
                             clr = "tab:purple"
-                        #axs2[1].plot(unique_mjd_rounded, noisedf_ave2[col], ".", label = lab, zorder=2, alpha=0.7,color=clr)
+                        axs2[1].plot(unique_mjd_rounded, noisedf_ave2[col]*1e6, ".", label = lab, zorder=2, alpha=0.7,color=clr)
 
-    axs2[1].legend(fontsize=font)
+    axs2[1].legend(fontsize=font, loc="upper left")
     axs2[1].set_ylabel("Residuals ($\mu$s)")
 
     axs2[2].errorbar(x=unique_mjd_rounded, y=(res_WA1-np.mean(res_WA1))*1e6, yerr=unc_WA1.values*1e6, linestyle="",marker=".", label = "Residuals")
@@ -330,10 +373,12 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
                         else:
                             lab = col
                             clr = "tab:purple"
-                        #axs2[2].plot(unique_mjd_rounded, noisedf_ave1[col], ".", label = lab, zorder=2, alpha=0.7,color=clr)
+                        axs2[2].plot(unique_mjd_rounded, noisedf_ave1[col]*1e6, ".", label = lab, zorder=2, alpha=0.7,color=clr)
 
-    axs2[2].legend(fontsize=font)
+    axs2[2].legend(fontsize=font, loc="upper left")
     axs2[2].set_ylabel("Residuals ($\mu$s)")
+    axs2[0].set_xlabel("MJD")
+    axs2[1].set_xlabel("MJD")
     axs2[2].set_xlabel("MJD")
     axs2[0].xaxis.get_label().set_fontsize(font)
     axs2[0].yaxis.get_label().set_fontsize(font)
@@ -348,15 +393,32 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
 
 
     fig2.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/misspec_comparisons/"+pulsar+"/"+pulsar+"_averaged_misspec_plot.png")
-    plt.close()
-    
-    res_noISM = noisedf_ave2["Residuals ave"].values - noisedf_ave2["pl_DM_noise ave"].values - noisedf_ave2["SW_noise ave"].values
-    weights = 1/(noisedf_ave2["unc ave"].values**2)
-    xbar = np.sum(res_noISM*weights)/np.sum(weights)
 
-    wrms = np.sqrt(np.sum((weights)*((res_noISM-xbar)**2))/np.sum(weights))*10**6
+    plt.close()
+
+    #res_noISM = noisedf_ave2["Residuals ave"].values - noisedf_ave2["pl_DM_noise ave"].values - noisedf_ave2["SW_noise ave"].values
+    
+    res_noISM = glsfit1.resids.resids.value
+    for col in noise_df1.columns:
+        if "noise" in col:
+            if col != "pl_red_noise":
+                if not gw_subtract:
+                    if col != "pl_gw_noise":
+                        res_noISM -= noise_df1[col].values
+                else:
+                    res_noISM -= noise_df1[col].values
+
+    noise_df1["Chrom subtracted"] = res_noISM
+    res_df1["Chrom subtracted"] = res_noISM
+    Chrom_WA = res_df1.groupby("Rounded MJD").apply(weighted_average, "Chrom subtracted", "WN Scaled Uncertainty (s)")
+
+
+    weights = 1/(noisedf_ave2["unc ave"].values**2)
+    xbar = np.sum(Chrom_WA*weights)/np.sum(weights)
+
+    wrms = np.sqrt(np.sum((weights)*((Chrom_WA-xbar)**2))/np.sum(weights))*10**6
     fig3, axs3 = plt.subplots(figsize=(15,5))
-    axs3.errorbar(x=unique_mjd_rounded, y=res_noISM*1e6,yerr=noisedf_ave2["unc ave"].values*1e6,linestyle="",marker=".", label = "$\sigma_\mathrm{RMS}$ = %.2f $\mu$s" %wrms)
+    axs3.errorbar(x=unique_mjd_rounded, y=Chrom_WA*1e6,yerr=noisedf_ave2["unc ave"].values*1e6,linestyle="",marker=".", label = "$\sigma_\mathrm{RMS}$ = %.2f $\mu$s" %wrms)
     axs3.set_ylabel("Residuals ($\mu$s)")
     axs3.set_xlabel("MJD")
     axs3.set_title(psrname + ": corrected for ISM effects", fontsize=font)
@@ -381,6 +443,146 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
     axs4.xaxis.get_label().set_fontsize(font)
     axs4.yaxis.get_label().set_fontsize(font)
     fig4.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/misspec_comparisons/"+pulsar+"/"+pulsar+"_all_corrected.png")
+    
+
+    res_nonoise_real = noisedf_ave1["Residuals ave"].values - noisedf_ave1["pl_DM_noise ave"].values - noisedf_ave1["SW_noise ave"].values - noisedf_ave1["pl_red_noise ave"].values
+    weights2 = 1/(noisedf_ave1["unc ave"].values**2)
+    xbar2 = np.sum(res_nonoise_real*weights2)/np.sum(weights2)
+
+    wrms2 = np.sqrt(np.sum((weights2)*((res_nonoise_real-xbar2)**2))/np.sum(weights2))*10**6
+    fig5, axs5 = plt.subplots(figsize=(15,5))
+    axs5.errorbar(x=unique_mjd_rounded, y=res_nonoise_real*1e6,yerr=noisedf_ave1["unc ave"].values*1e6,linestyle="",marker=".", label = "$\sigma_\mathrm{RMS}$ = %.3f $\mu$s" %wrms2)
+    axs5.set_ylabel("Residuals ($\mu$s)")
+    axs5.set_xlabel("MJD")
+    axs5.set_title(psrname, fontsize =font)
+    axs5.legend(fontsize=font)
+    axs5.tick_params(axis="both", labelsize=font)
+    axs5.xaxis.get_label().set_fontsize(font)
+    axs5.yaxis.get_label().set_fontsize(font)
+    fig5.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/misspec_comparisons/"+pulsar+"/"+pulsar+"_real_all_corrected.png")
+    
+
+def wrms_plotter(parfile, timfile, sw_extract = False, gw_subtract=True):
+    # Both the pulsar and the fitter object are obscenely heavy, so this code needs to garbage collect everything first otherwise it taps out
+    maindir = "/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/tdb_partim_w_noise_ECORRgauss/"
+    psr1 = Pulsar(maindir+parfile, maindir+timfile, ephem="DE440")
+    m1, t_all = get_model_and_toas(maindir+parfile, maindir+timfile, allow_name_mixing=True)
+    psrname = m1.name.split("/")[-1].replace("_tdb.par","")
+
+    glsfit1 = pint.fitter.GLSFitter(toas=t_all, model=m1)
+    glsfit1.fit_toas(maxiter=3)
+
+    
+    mjds = glsfit1.toas.get_mjds()
+    noise_df1 = pd.DataFrame.from_dict(glsfit1.resids.noise_resids)
+    noise_df1["MJD"] = mjds.value
+    noise_df1["Residuals"] = glsfit1.resids.resids.value
+
+    # Creating average version of these.
+    # TBD: These should be weighted averages as well. Future Matt's problem.
+    #ave_noise_dict = {}
+    #for col in noise_df.columns:
+    #    if "noise" in col:
+    #        ave_noise_dict[col] = noise_df.groupby("MJD")[col].mean()
+    
+    if "SW_noise" in glsfit1.resids.noise_resids.keys():
+        deter_sw = solar_wind(n_earth=m1.SWNEARTH.quantity)
+        mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
+        sw_array = mean_sw(psr1).get_delay()
+        sw_pert_array = noise_df1["SW_noise"].values
+
+        sw_total = sw_array + sw_pert_array
+        noise_df1["SW_noise"] = sw_total
+    
+    
+    font = 15
+    
+    
+    #fig, ax = plt.subplots(figsize=(16,9))
+    noise_df1["Rounded MJD"] = noise_df1["MJD"].round(decimals=4)
+    uncs = glsfit1.toas.get_errors().to(u.s).value
+    try:
+        efac = m1.EFAC1.value
+        #efac = 0.958275479428316
+        uncs *= efac
+    except:
+        pass
+    
+    try:
+        equad = m1.TNEQ1.value
+        equad = 10**(equad)
+        uncs = np.sqrt(equad**2 + uncs**2)
+    except:
+        pass
+    noise_df1["Scaled_unc"] = uncs
+
+    noisedf_ave1 ={}
+    #axs[1].errorbar(x=noise_df1["MJD"], y=glsfit1.resids.resids.value,yerr=glsfit1.toas.get_errors().to(u.s).value,linestyle="",marker=".", label = "Residuals",alpha=0.2,zorder=1)
+    for col in noise_df1.columns:
+        if "noise" in col:
+            #if col != "ecorr_noise" and  col != "SW_noise":
+            #if col != "ecorr_noise":
+            if not gw_subtract:
+                if col != "pl_gw_noise":
+                    if "chrom" in col:
+                        lab = "Chromatic Noise"
+                        clr = "tab:orange"
+                    elif "DM" in col:
+                        lab = "DM Noise"
+                        clr = "tab:green"
+                    elif "red" in col:
+                        lab = "Red Noise"
+                        clr = "tab:red"
+                    elif "SW" in col:
+                        lab = "Solar Wind"
+                        clr = "tab:brown"
+                    else:
+                        lab = col
+                        clr = "tab:purple"
+                    noisedf_ave1[col+" ave"] = noise_df1.groupby("Rounded MJD").apply(weighted_average, col, "Scaled_unc")
+
+
+    whitened_residuals1 = glsfit1.resids.resids.value
+    for col in noise_df1.columns:
+        if "noise" in col:
+            #if col != "ecorr_noise" and  col != "SW_noise":
+            #if col != "ecorr_noise":
+            if not gw_subtract:
+                if col != "pl_gw_noise":
+                    whitened_residuals1 -= noise_df1[col].values
+            else:
+                whitened_residuals1 -= noise_df1[col].values
+    res_df1 = pd.DataFrame(np.array([mjds, whitened_residuals1]).T,columns=["MJD","Noise subtracted (s)"])
+    res_df1["Rounded MJD"] = noise_df1["MJD"].round(decimals=4)
+    res_df1["WN Scaled Uncertainty (s)"] = uncs
+
+    res_WA1 = res_df1.groupby("Rounded MJD").apply(weighted_average, "Noise subtracted (s)", "WN Scaled Uncertainty (s)")
+    unc_WA1 = res_df1.groupby("Rounded MJD").apply(uncertainty_scaled, "WN Scaled Uncertainty (s)")
+
+
+    noisedf_ave1["Residuals ave"] = noise_df1.groupby("Rounded MJD").apply(weighted_average, "Residuals", "Scaled_unc")
+    unc_WA = res_df1.groupby("Rounded MJD").apply(uncertainty_scaled, "WN Scaled Uncertainty (s)")
+    noisedf_ave1["unc ave"] = unc_WA
+
+    noisedf_ave1 = pd.DataFrame.from_dict(noisedf_ave1)
+
+    unique_mjd_rounded = np.array(sorted(list(set(noise_df1["Rounded MJD"].values))))
+
+    res_nonoise_real = noisedf_ave1["Residuals ave"].values - noisedf_ave1["pl_DM_noise ave"].values - noisedf_ave1["SW_noise ave"].values - noisedf_ave1["pl_red_noise ave"].values
+    weights2 = 1/(noisedf_ave1["unc ave"].values**2)
+    xbar2 = np.sum(res_nonoise_real*weights2)/np.sum(weights2)
+
+    wrms2 = np.sqrt(np.sum((weights2)*((res_nonoise_real-xbar2)**2))/np.sum(weights2))*10**6
+    fig5, axs5 = plt.subplots(figsize=(15,5))
+    axs5.errorbar(x=unique_mjd_rounded, y=res_WA1*1e6,yerr=noisedf_ave1["unc ave"].values*1e6,linestyle="",marker=".", label = "$\sigma_\mathrm{RMS}$ = %.3f $\mu$s" %wrms2)
+    axs5.set_ylabel("Residuals ($\mu$s)")
+    axs5.set_xlabel("MJD")
+    axs5.set_title(psrname, fontsize =font)
+    axs5.legend(fontsize=font)
+    axs5.tick_params(axis="both", labelsize=font)
+    axs5.xaxis.get_label().set_fontsize(font)
+    axs5.yaxis.get_label().set_fontsize(font)
+    fig5.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/misspec_comparisons/"+pulsar+"/"+pulsar+"_real_all_corrected.png")
     
 
 
@@ -455,15 +657,16 @@ def lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=True):
     fig = ax_new.get_figure()
     fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_after_averaging/"+pulsar+"/"+pulsar+"_ave_anderson_check.png")
     '''
-    return glsfit1, glsfit2, m1, m2, noise_df1, noise_df2, noisedf_ave1, noisedf_ave2
+    return glsfit1, m1, noise_df1, noisedf_ave1
     
 
    
 parfile = pulsar+"_tdb.par"
 parfile_misspec = pulsar+"_tdb_misspec.par"
+#parfile_misspec = pulsar+"_tdb.par"
 timfile = pulsar+".tim"
 
-glsfit1, glsfit2, model1, model2, noise_df1, noise_df2, noisedf_ave1, noisedf_ave2 = lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=False)
+glsfit1, model1, noise_df1, noisedf_ave1 = lazy_noise_reducer(parfile, timfile, sw_extract = False, gw_subtract=False)
 '''
 
 

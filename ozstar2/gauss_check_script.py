@@ -266,12 +266,12 @@ def lazy_noise_reducer_ecorr_gauss(parfile, timfile, sw_extract = False, gw_subt
         noise_df["SW_noise"] = sw_total
     
     
-    fig_gw, ax_gw = plt.subplots(figsize=(16,5))
-    ax_gw.plot(noise_df["MJD"], noise_df["pl_gw_noise"], ".", label = "pl_gw_noise", zorder=2, alpha=0.25)
-    ax_gw.set_title(psrname+" GW realisation")
-    ax_gw.legend()
-    ax_gw.set_ylabel("Residuals (s)")
-    fig_gw.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_gaussian_process/"+pulsar+"/"+pulsar+"_GW_plot.png")
+    #fig_gw, ax_gw = plt.subplots(figsize=(16,5))
+    #ax_gw.plot(noise_df["MJD"], noise_df["pl_gw_noise"], ".", label = "pl_gw_noise", zorder=2, alpha=0.25)
+    #ax_gw.set_title(psrname+" GW realisation")
+    #ax_gw.legend()
+    #ax_gw.set_ylabel("Residuals (s)")
+    #fig_gw.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_gaussian_process/"+pulsar+"/"+pulsar+"_GW_plot.png")
 
     fig1, axs= plt.subplots(3,figsize=(16,15))
     axs[0].errorbar(x=noise_df["MJD"], y=glsfit.resids.resids.value,yerr=glsfit.toas.get_errors().to(u.s).value,linestyle="",marker=".", label = "Residuals")
@@ -295,7 +295,9 @@ def lazy_noise_reducer_ecorr_gauss(parfile, timfile, sw_extract = False, gw_subt
     axs[1].legend()
     axs[1].set_ylabel("Residuals (s)")
     
-    whitened_residuals = glsfit.resids.resids.value
+    non_whitened_res = np.copy(glsfit.resids.resids.value)
+
+    whitened_residuals = np.copy(glsfit.resids.resids.value)
     for col in noise_df.columns:
         if "noise" in col:
             #if col != "ecorr_noise" and  col != "SW_noise":
@@ -329,12 +331,13 @@ def lazy_noise_reducer_ecorr_gauss(parfile, timfile, sw_extract = False, gw_subt
         pass
     
 
-    res_df = pd.DataFrame(np.array([mjds, whitened_residuals]).T,columns=["MJD","Noise subtracted (s)"])
+    res_df = pd.DataFrame(np.array([mjds, whitened_residuals, non_whitened_res]).T,columns=["MJD","Noise subtracted (s)", "non_whitened_res"])
     res_df["Rounded MJD"] = noise_df["MJD"].round(decimals=4)
     res_df["WN Scaled Uncertainty (s)"] = uncs
     
 
     res_WA = res_df.groupby("Rounded MJD").apply(weighted_average, "Noise subtracted (s)", "WN Scaled Uncertainty (s)")
+    nonres_WA = res_df.groupby("Rounded MJD").apply(weighted_average, "non_whitened_res", "WN Scaled Uncertainty (s)")
     unc_WA = res_df.groupby("Rounded MJD").apply(uncertainty_scaled, "WN Scaled Uncertainty (s)")
 
     try:
@@ -384,6 +387,21 @@ def lazy_noise_reducer_ecorr_gauss(parfile, timfile, sw_extract = False, gw_subt
     
     unique_mjd_rounded = np.array(sorted(list(set(res_df["Rounded MJD"].values))))
     
+
+    weights = 1/(unc_WA.values**2)
+    xbar = np.sum(nonres_WA*weights)/np.sum(weights)
+    non_rms = np.sqrt(np.sum((weights)*((nonres_WA-xbar)**2))/np.sum(weights))*10**6
+
+    figres, axres = plt.subplots(figsize=(15,5))
+    axres.errorbar(x=unique_mjd_rounded, y=(nonres_WA-np.mean(nonres_WA))*1e6, yerr=unc_WA.values*1e6, linestyle="", marker=".", label = r"RMS: {:.2f} $\mu$s".format(non_rms))
+    #ax2.set_title(pulsar+' whitened averaged residuals; '+r'$\chi^2_{red}$'+'= {:.2f}'.format(ave_red_chisq)+'; p-value = {:.4f}'.format(ave_p_value)+'; (1-p) = {:.4f}'.format(1-ave_p_value))
+    axres.legend(fontsize=15)
+    axres.set_xlabel("MJD", fontsize=15)
+    axres.set_ylabel(r"Residuals ($\mu$s)", fontsize=15)
+    axres.tick_params(labelsize=15)
+    figres.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/Pulsar_checks/ECORR_gaussian_process/"+pulsar+"/"+pulsar+"_uncorrected.png")
+
+
     fig, ax2 = plt.subplots(figsize=(15,5))
     ax2.errorbar(x=unique_mjd_rounded, y=res_WA-np.mean(res_WA), yerr=unc_WA.values, linestyle="", marker=".", label = "Whitened Averaged Residuals")
     ax2.set_title(pulsar+' whitened averaged residuals; '+r'$\chi^2_{red}$'+'= {:.2f}'.format(ave_red_chisq)+'; p-value = {:.4f}'.format(ave_p_value)+'; (1-p) = {:.4f}'.format(1-ave_p_value))

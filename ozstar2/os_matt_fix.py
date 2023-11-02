@@ -81,18 +81,18 @@ def high_frequencies(freqs):
 low_freq = selections.Selection(low_frequencies)
 high_freq = selections.Selection(high_frequencies)
 
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
-psrlist=[ x.strip("\n") for x in open(psr_list).readlines() ]
-datadir='/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/real_data/from_partim/'
+#psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
+# psrlist=[ x.strip("\n") for x in open(psr_list).readlines() ]
+datadir='/fred/oz002/users/mmiles/MPTA_GW/SMBHB/active_partim/'
 
 parfiles=sorted(glob.glob(datadir+'*.par'))
 timfiles=sorted(glob.glob(datadir+'*.tim'))
-if psrlist is not None:
-    parfiles = [x for x in parfiles if x.split('/')[-1].split('.')[0] in psrlist]
-    timfiles = [x for x in timfiles if x.split('/')[-1].split('.')[0] in psrlist]
+# if psrlist is not None:
+#     parfiles = [x for x in parfiles if x.split('/')[-1].split('.')[0] in psrlist]
+#     timfiles = [x for x in timfiles if x.split('/')[-1].split('.')[0] in psrlist]
 
-timfiles = [ tim  for tim in timfiles if "all" not in tim ]
-timfiles = [ tim  for tim in timfiles if "off" not in tim ]
+# timfiles = [ tim  for tim in timfiles if "all" not in tim ]
+# timfiles = [ tim  for tim in timfiles if "off" not in tim ]
 #timfiles = [ tim  for tim in timfiles if "_red" not in tim ]
 #parfiles = [ par  for par in parfiles if "_red" not in par ]
 
@@ -102,16 +102,19 @@ ephemeris =  'DE440'
 #ephemeris = "DE421"
 
 for p, t in zip(parfiles,timfiles):
-    #if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p and "J1713" not in p:
-    if "J1903" not in p and "J1455" not in p and "J1643" not in p and "J1804-2717" not in p and "J1933-6211" not in p and "J1902" not in p:
-        print(p)
-        psr=Pulsar(p,t,ephem=ephemeris)
-        #print(psr)
+
+    print(p)
+    psr=Pulsar(p,t,ephem=ephemeris)
+    #print(psr)
+    if psr.name != "J1902-5105":
+    #if psr.name != "J1902-5105" and psr.name !="J1431-5740" and psr.name != "J1643-1224" and psr.name != "J1708-3506" and psr.name != "J1802-2124":
+        # if psr.name != "J1708-3506":
+        #     if psr.name != "J2236-5527":
         psrs.append(psr)
 
 
 
-noisefile = '/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_WN_models.json'
+noisefile = '/fred/oz002/users/mmiles/MPTA_GW/SMBHB/new_models/MPTA_WN_models.json'
 
 with open(noisefile, 'r') as f:
     noisedict=json.load(f)
@@ -157,7 +160,6 @@ crn = blocks.common_red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=T
 
 for pulsar in psrs:
 
-
     #tm = gp_signals.TimingModel()
     #s = tm
     s = gp_signals.TimingModel()
@@ -173,9 +175,11 @@ for pulsar in psrs:
     ef = white_signals.MeasurementNoise(efac=efac, selection=by_backend)
     s += ef
     
-    if pulsar.name+"_KAT_MKBF_log10_ecorr" in noisedict.keys():
-        ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=by_backend)
+    if pulsar.name+"_basis_ecorr_KAT_MKBF_log10_ecorr" in noisedict.keys():
+        #ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=by_backend)
+        ec = gp_signals.EcorrBasisModel(log10_ecorr=ecorr,selection=by_backend)
         s += ec
+            
 
     max_cadence = 60  # days
     #components = int(Tspan / (max_cadence*86400))
@@ -186,18 +190,17 @@ for pulsar in psrs:
     #s += blocks.common_red_noise_block(psd='powerlaw', prior='log-uniform', Tspan=Tspan, 
     #                               components=120, gamma_val=4.33, name='gw')
     
-    ev_json = json.load(open('/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_models.json'))
+    ev_json = json.load(open('/fred/oz002/users/mmiles/MPTA_GW/SMBHB/new_models/MPTA_noise_models.json'))
     keys = list(ev_json.keys())
     # Get list of models
     psrmodels = [ psr_model for psr_model in keys if pulsar.name in psr_model ][0].split("_")[1:]
-    
-    #if "RN" in psrmodels or "RED" in psrmodels:
-    log10_A_red = eparameter.Uniform(-20, -11)
-    gamma_red = eparameter.Uniform(0, 7)
-    pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
-    rn = gp_signals.FourierBasisGP(spectrum=pl, components=120, Tspan=Tspan)
-    s += rn
-    
+
+    # log10_A_red = eparameter.Uniform(-20, -11)
+    # gamma_red = eparameter.Uniform(0, 7)
+    # pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+    # rn = gp_signals.FourierBasisGP(spectrum=pl, components=120, Tspan=Tspan)
+    # s += rn
+
     high_comps = 120
     for i, pm in enumerate(psrmodels):
         if pm =="DM":
@@ -217,6 +220,13 @@ for pulsar in psrs:
             gamma_dm = eparameter.Uniform(0, 14)
             dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=120,option="powerlaw")
             s += dm
+
+        # if pm == "RN":
+        #     log10_A_red = eparameter.Uniform(-20, -11)
+        #     gamma_red = eparameter.Uniform(0, 7)
+        #     pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+        #     rn = gp_signals.FourierBasisGP(spectrum=pl, components=120, Tspan=Tspan)
+        #     s += rn
 
         if pm == "CHROM":
             if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
@@ -289,24 +299,6 @@ for pulsar in psrs:
                                                                     idx=idx)
             chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_wide_gp')
             s += chrom
-
-        if pm == "BL":
-            if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
-                log10_A_bn = eparameter.Uniform(-20, -11)
-                gamma_bn = eparameter.Uniform(0, 7)
-                band_components = high_comps
-                bpl = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-                bnl = gp_signals.FourierBasisGP(bpl, components=band_components,
-                                            selection=low_freq, name='low_band_noise')
-                s += bnl
-            elif i+1 == len(psrmodels):
-                log10_A_bn = eparameter.Uniform(-20, -11)
-                gamma_bn = eparameter.Uniform(0, 7)
-                band_components = high_comps
-                bpl = utils.powerlaw(log10_A=log10_A_bn, gamma=gamma_bn)
-                bnl = gp_signals.FourierBasisGP(bpl, components=band_components,
-                                            selection=low_freq, name='low_band_noise')
-                s += bnl
 
         if pm == "SW":
             n_earth = eparameter.Uniform(0, 20)
@@ -391,21 +383,23 @@ ostat_mono = opt_stat.OptimalStatistic(psrs, pta=pta, orf='monopole',bayesephem=
 #with open('./MPTA_WN_models_2.json', 'r') as f:
 #    ml_params = json.load(f)
 
-with open('/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_SPGWER_noise_values.json', "r") as f:
+#with open('/fred/oz002/users/mmiles/MPTA_GW/SMBHB/new_models/MPTA_noise_values_allpulsars.json', "r") as f:
+#with open('/fred/oz002/users/mmiles/MPTA_GW/SMBHB/new_models/MPTA_noise_values_allpulsars_incRED.json', "r") as f:
+with open('/fred/oz002/users/mmiles/MPTA_GW/SMBHB/new_models/MPTA_noise_values_allpulsars_ER_SGWBconst.json', "r") as f:
     ml_params = json.load(f)
 
-chain_file = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/CRN_ER_masterChain_0206.npy"
-marg_chain = np.load(chain_file)
-pars_file = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/CRN_ER_run_1/pars.txt"
+# chain_file = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/CRN_ER_masterChain_0206.npy"
+# marg_chain = np.load(chain_file)
+# pars_file = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/CRN_ER_run_1/pars.txt"
 
-parlist = list(open(pars_file))
-parlist = [ par.strip("\n") for par in parlist ]
+# parlist = list(open(pars_file))
+# parlist = [ par.strip("\n") for par in parlist ]
 
-marg_no_gam = np.delete(marg_chain,-6,1)
-parlist.remove("gw_gamma")
+# marg_no_gam = np.delete(marg_chain,-6,1)
+# parlist.remove("gw_gamma")
 
-mxi, mrho, msig, mOS, mOS_SNR = ostat.compute_noise_marginalized_os(marg_no_gam, param_names=parlist, N=1000)
-print(mOS, mOS_SNR)
+# mxi, mrho, msig, mOS, mOS_SNR = ostat.compute_noise_marginalized_os(marg_no_gam, param_names=parlist, N=1000)
+# print(mOS, mOS_SNR)
 
 
 xi, rho, sig, OS, OS_sig = ostat.compute_os(params=ml_params)
@@ -420,14 +414,14 @@ print(OS_mono, OS_sig_mono, OS_mono/OS_sig_mono)
 #ximult, rhomult, sigmult, OSmult, OS_sigmult = opt_stat.OptimalStatistic.compute_multiple_corr_os(params=ml_params, psd='powerlaw', fgw=None, correlations=['dipole', 'hd'])
 #print(OSmult, OS_sigmult, OSmult/OS_sigmult)
 
-mrho_med = np.median(mrho, axis=0)
-msig_med = np.median(msig, axis=0)
+# mrho_med = np.median(rho, axis=0)
+# msig_med = np.median(sig, axis=0)
 
-idx=np.argsort(mxi)
+idx=np.argsort(xi)
 
-xi_sorted = mxi[idx]
-rho_sorted = mrho_med[idx]
-sig_sorted = msig_med[idx]
+xi_sorted = xi[idx]
+rho_sorted = rho[idx]
+sig_sorted = sig[idx]
 
 
 npsr=np.shape(psrs)[0]
@@ -436,7 +430,7 @@ gof=np.zeros(npsr)
 rho2=np.zeros(npsr)
 sig2=np.zeros(npsr)
 
-rho_expected=1.82e-29*get_HD_curve(xi)
+rho_expected=2.51e-29*get_HD_curve(xi)
 
 f = open("crosscorr_noisemarg.dat", "w")
 
@@ -463,7 +457,7 @@ for i in range(npsr):
 
 
 #npairs=120
-npairs = 200
+npairs = 300
 
 xi_mean = []
 xi_err = []
@@ -493,8 +487,8 @@ xi_err=np.array(xi_err)
 zeta=np.linspace(0.01,180,100)
 
 HD=get_HD_curve(zeta)
-
-plt.plot(zeta, 1.82e-29*HD, ls='--', label='Hellings-Downs', color='C0', lw=1.5)
+plt.title("OS: {0:.2E}; SNR: {1:.2f}".format(OS, OS/OS_sig))
+plt.plot(zeta, OS*HD, ls='--', label='Hellings-Downs', color='C0', lw=1.5)
 plt.plot(zeta, zeta*0.0+OS_mono, ls='--', label='Monopole', color='C1', lw=1.5)
 plt.plot(zeta, OS_dip*np.cos(zeta*np.pi/180), ls='--', label='Dipole', color='C2', lw=1.5)
 
@@ -507,9 +501,5 @@ plt.legend(loc=4)
 
 plt.tight_layout()
 #plt.show()
-plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/real_data/from_partim/OS_quicklook_noisemarg_no1092_signalbinning.png")
-plt.clf()
-
-plt.hist(mOS, bins=30, density=True, histtype="step")
-plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/partim_noise_removed/real_data/from_partim/Marg_OS_dist_no1902_signalbinning.png")
+plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/SMBHB/OS_runs/OS_new_models_noER_noRED_SGWBconst_iter_noJ1902.png")
 plt.clf()

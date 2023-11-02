@@ -7,15 +7,15 @@ import math
 import json
 
 
-noisefile = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_allpulsars_1D_med_and_error.json"
+noisefile = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_values_allpulsars_redone.json"
 
 
 pulsar_list_txt = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
 pulsar_list = list(open(pulsar_list_txt,"r"))
 
-noisejson = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_allpulsars_1D_med_and_error.json"))
+noisejson = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_values_allpulsars_redone.json"))
 
-latex_file_position = "/fred/oz002/users/mmiles/MPTA_GW//fred/oz002/users/mmiles/MPTA_GW/noise_paper_plots_tables/noise_1Dmed_and_unc.txt"
+latex_file_position = "/fred/oz002/users/mmiles/MPTA_GW//fred/oz002/users/mmiles/MPTA_GW/noise_paper_plots_tables/noise_1Dmed_and_unc_new.txt"
 
 for pulsar in pulsar_list:
     print(pulsar)
@@ -37,6 +37,7 @@ for pulsar in pulsar_list:
     chrom_idx = "-"
 
     for n in psrmodels:
+        print(n)
         if n == pulsar+"_KAT_MKBF_efac":
             efac = noisejson[n]
         if n == pulsar+"_KAT_MKBF_log10_ecorr":
@@ -55,6 +56,7 @@ for pulsar in pulsar_list:
             sw_gamma = noisejson[n]
         if n == pulsar+"_gp_sw_log10_A":
             sw_amp = noisejson[n]
+            print(sw_amp)
         if n == pulsar+"_n_earth_n_earth":
             n_earth = noisejson[n]
         if n == pulsar+"_chrom_gp_gamma":
@@ -76,5 +78,5 @@ for pulsar in pulsar_list:
             else:
                 chrom_idx = 4
 
-
+    print(pulsar,efac, equad, ecorr, red_amp,red_gamma,dm_amp,dm_gamma,chrom_amp,chrom_gamma,chrom_idx,sw_amp,sw_gamma,n_earth)
     os.system(r"echo '{0} & {1} & {2} & {3} & {4} & {5} & {6} & {7} & {8} & {9} & {10} & {11} & {12} & {13} \\' >> ".format(pulsar,efac, equad, ecorr, red_amp,red_gamma,dm_amp,dm_gamma,chrom_amp,chrom_gamma,chrom_idx,sw_amp,sw_gamma,n_earth)+latex_file_position)

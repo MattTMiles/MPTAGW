@@ -78,3 +78,8 @@ if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/${p
     #((counter++))
 fi
 
+if [[ ! -f "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/MISSPEC/${psr}/${psr}_SPGWC600_MISSPEC_RED_DM/SPGWC600_MISSPEC_RED_DM_result.json" ]] && [[ ! "${psr}_live_ozstar2_600_MISSPEC_RED_DM" == $(grep -w -m 1 ^${psr}_live_ozstar2_600_MISSPEC_RED_DM /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list)  ]]; then
+    sbatch -J ${psr}_live_ozstar2_600_MISSPEC_RED_DM /home/mmiles/soft/GW/ozstar2/SPGW_MISSPEC_noise_mpi_slurm.sh ${psr} SPGWC600_MISSPEC_RED_DM "efac_c equad_c ecorr_c red dm gw_const_gamma"  600 DE440
+    echo "rerunning ${psr}_live_ozstar2_600_MISSPEC_RED_DM" >> /fred/oz002/users/mmiles/MPTA_GW/SPGW_ozstar2_slurm.list
+    #((counter++))
+fi

@@ -84,13 +84,13 @@ Tyear = 3.8828021125067073704
 f_xaxis = np.linspace(1,10,10)
 freal = f_xaxis/T
 
-pwl = np.sqrt((10**-14.38)**2 / 12.0 / np.pi**2 * (1/(86400*365.2425))**(4.3333-3) * freal**(-4.3333) * freal[0])
+pwl = np.sqrt((10**-14.3)**2 / 12.0 / np.pi**2 * (1/(86400*365.2425))**(4.3333-3) * freal**(-4.3333) * freal[0])
 
 fig = plt.figure(figsize=(10,5))
 axes = fig.add_subplot(111)
 
 axes.violinplot(prob_free, positions=f_xaxis)
-axes.plot(f_xaxis, np.log10(pwl),linestyle="-", color="black",label = "Factorised likelihood result:\n$\log_{10}A = -14.38; \gamma=4.333$")
+axes.plot(f_xaxis, np.log10(pwl),linestyle="-", color="black",label = "Factorised likelihood result:\n$\log_{10}A = -14.15; \gamma=4.333$")
 #axes.set_xlabel("Hz")
 axes.set_ylabel(r"$\log_{10}(\rho/s)$")
 axes.set_xscale("log")
