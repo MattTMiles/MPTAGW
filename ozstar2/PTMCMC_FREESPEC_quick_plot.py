@@ -1,12 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Feb  4 14:53:00 2019
 
-@author: dreardon
-
-Runs basic white, red, and DM noise model for all pulsars in datadir
-"""
 
 import os
 import json
@@ -17,16 +9,16 @@ import matplotlib.pyplot as plt
 import corner
 
 
-def chain_corner_from_dir(dirname, parstxt):
-    chainfile = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/FREESPEC/" + dirname + '/chain_1.txt'
+def chain_corner_from_dir(dirname):
+    chainfile = dirname + '/chain_1.txt'
 
     if not os.path.exists(chainfile):
         
         return print("chain_1.txt doesn't exist in this directory")
 
     print("loading {}".format(chainfile))
-    chain_i = np.loadtxt(chainfile).squeeze()
-    f = open(parstxt, "r")
+    chain_i = np.loadtxt(chainfile, skiprows=90000).squeeze()
+    f = open(dirname+"/pars.txt", "r")
     pars = list(f.readlines())
     f.close()
     
@@ -38,9 +30,9 @@ def chain_corner_from_dir(dirname, parstxt):
     
     #chain_gamma = chain_i[:,-6]
     #chain_amp = chain_i[:,-5]
-    chain_rho_bins = np.vstack(chain_i[:,-34:])
+    chain_rho_bins = np.vstack(chain_i[::10,-35:])
     chain_rho_bins = chain_rho_bins[:,:30]
-    pp = model_utils.PostProcessing(chain_rho_bins, pars[-30:], burn_percentage=0.8)
+    pp = model_utils.PostProcessing(chain_rho_bins, pars[-31:-1], burn_percentage=0.8)
     pp.plot_trace()
     plt.savefig(chainfile.replace('.txt', '{}_rho_bins_trace.png'.format(dirname)))
     plt.close()
@@ -69,5 +61,5 @@ def chain_corner_from_dir(dirname, parstxt):
     plt.savefig(figsavename, dpi=300, bbox_inches='tight')
     plt.close()
     '''
-chain_corner_from_dir(sys.argv[1], "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/FREESPEC/" + sys.argv[1]+"/pars.txt")
+chain_corner_from_dir(sys.argv[1])
 

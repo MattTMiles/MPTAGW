@@ -9,7 +9,7 @@ import corner
 
 
 def chain_corner_from_dir(dirname, parstxt):
-    chainfile = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PTA_RUN/HYPER_FREESPEC/" + dirname + '/chain_1.txt'
+    chainfile = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_newdata/out_ptmcmc/PTA_FREESPEC/" + dirname + '/chain_1.txt'
 
     if not os.path.exists(chainfile):
         

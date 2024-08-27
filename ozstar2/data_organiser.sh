@@ -7,32 +7,34 @@ do
     if [[ 1 -eq "$(echo "${num1} > ${num2}" |bc -l)" ]]; 
     then 
         echo "${arch}_too_big; splitting it";
-        
-        #splitby=$((${num1}/${num2}))
-        
-        #if [[ 1 -eq "$(echo "${splitby} > 1" |bc -l)" ]]; then
+        median=$(psredit -Qq -c length *fluxcal.dly | sort -n | awk '{arr[NR]=$1} END { if (NR%2==1) print arr[(NR+1)/2]; else print (arr[NR/2]+arr[NR/2+1])/2}')
 
-        psrsplit -n 1 ${arch}
+        splitby=$((${num1%.*}/${median%.*}))
+        subints=$(psredit -Qq -c nsubint ${arch})
+
+        nsubint=$((($subints+$splitby+1)/$splitby))
+
+        psrsplit -n ${nsubint} ${arch}
         rm ${arch}
 
         for subarch in $(ls ${arch%.ar}*ar);
         do
-            pam --setnchn 16 ${subarch} -e 16chn
+            pam --setnchn 32 ${subarch} -e 32chn
             rm ${subarch}
-            pam -mT ${subarch%.ar}.16chn
-            /fred/oz002/users/mmiles/dlyfix/dlyfix ${subarch%.ar}.16chn -u . -o ${subarch%.ar}.dly
-            rm ${subarch%.ar}.16chn
+            pam -mT ${subarch%.ar}.32chn
+            /fred/oz002/users/mmiles/dlyfix/dlyfix ${subarch%.ar}.32chn -u . -o ${subarch%.ar}.dly
+            rm ${subarch%.ar}.32chn
         done
     else 
-        pam --setnchn 16 ${arch} -e 16chn
+        pam --setnchn 32 ${arch} -e 32chn
 
         rm ${arch}
 
-        pam -mT ${arch%.ar}.16chn
+        pam -mT ${arch%.ar}.32chn
 
-        /fred/oz002/users/mmiles/dlyfix/dlyfix ${arch%.ar}.16chn -u . -o ${arch%.ar}.dly
+        /fred/oz002/users/mmiles/dlyfix/dlyfix ${arch%.ar}.32chn -u . -o ${arch%.ar}.dly
 
-        rm ${arch%.ar}.16chn
+        rm ${arch%.ar}.32chn
     fi; 
 done
 

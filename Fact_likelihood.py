@@ -4,9 +4,12 @@ import bilby
 import random
 import corner
 from scipy.stats import gaussian_kde
+import glob
+import pandas as pd
+import json
 
-gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ppc/SPGW/"
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
+gw_dir = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_newdata/out_pbilby_pp_8/PM_WN/"
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_newdata/MPTA_pulsar_list.txt"
 #psr_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
 def sigma2fwhm(sigma):
     return sigma * np.sqrt(8 * np.log(2))
@@ -22,15 +25,15 @@ i=0
 for pulsar in to_use:
     psrname = pulsar.strip("\n")
     #if psrname != "J1811-2405" and psrname != "J1918-0642" and psrname != "J1737-0811":
-    #if psrname != "J00000":
-    if psrname != "J0711-6830" and psrname != "J0900-3144" and psrname != "J1017-7156" and psrname != "J1431-5740" and psrname != "J1547-5709" and psrname != "J1652-4838" and psrname != "J1708-3506" and psrname != "J1801-1417" and psrname != "J1802-2124" and psrname != "J2234+0944":
+    if psrname != "J00000":
+    #if psrname != "J0711-6830" and psrname != "J0900-3144" and psrname != "J1017-7156" and psrname != "J1431-5740" and psrname != "J1547-5709" and psrname != "J1652-4838" and psrname != "J1708-3506" and psrname != "J1801-1417" and psrname != "J1802-2124" and psrname != "J2234+0944":
         print(psrname)
         try:
             #psr_SPGW = gw_dir + "/" + psrname + "/" + psrname + "_SPGW1000_ER"
-            psr_SPGWC = gw_dir + "/" + psrname + "/"+ psrname + "_SPGWC600_ER"
+            psr_SPGWC = glob.glob(gw_dir + "/" + psrname + "*SGWB/")[0]
 
             #result_SPGW = bilby.result.read_in_result(psr_SPGW+"/SPGW1000_ER_result.json")
-            result_SPGWC = bilby.result.read_in_result(psr_SPGWC+"/SPGWC600_ER_result.json")
+            result_SPGWC = pd.read_json(json.load(open(glob.glob(psr_SPGWC+"/*final_res.json")[0])))
 
             #if not psrname+"_red_noise_log10_A" in result_SPGW.parameter_labels:
             #    posts_SPGW_A = result_SPGW.posterior["log10_A_gw"].values
@@ -39,7 +42,7 @@ for pulsar in to_use:
             #    posts_SPGW_A = result_SPGW.posterior[result_SPGW.posterior[psrname+"_red_noise_log10_A"] < -16.5]["log10_A_gw"].values
             #    posts_SPGW_g = result_SPGW.posterior[result_SPGW.posterior[psrname+"_red_noise_log10_A"] < -16.5]["gamma_gw"].values
 
-            posts_SPGWC_A = result_SPGWC.posterior["log10_A_gw"].values
+            posts_SPGWC_A = result_SPGWC["log10_A_gw"].values
 
             #pdf_SPGW_A = np.histogram(posts_SPGW_A,bins=np.linspace(-18,-12,99),density=True)[0] + 1e-20
             #pdf_SPGW_g = np.histogram(posts_SPGW_g,bins=np.linspace(0,7,99),density=True)[0] + 1e-20

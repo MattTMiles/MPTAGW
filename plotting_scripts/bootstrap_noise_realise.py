@@ -30,8 +30,8 @@ from scipy.stats import anderson
 
 import argparse
 import os
-
-#sys.path.insert(0,"/home/mmiles/soft/PINT/src")
+#/fred/oz002/users/akulkarn/softwares/PINT/src/pint/fitter.py
+#sys.path.insert(0,"/fred/oz002/users/akulkarn/softwares/PINT/src")
 import pint
 from pint.models import *
 
@@ -42,6 +42,7 @@ import pint.logging
 import pint.config
 from scipy.interpolate import interp1d
 import astropy.units as u
+import math
 
 ## Fix the plot colour to white
 plt.rcParams.update({'axes.facecolor':'white'})
@@ -69,16 +70,19 @@ def co_coll(directory, pulsar, noise, idx):
     chain = np.load(chainfile)
     chain_vals = chain[-idx, :]
 
-    efac = chain_vals[0]
-    ecorr = chain_vals[1]
-    equad = chain_vals[2]
-    dm_gamma = chain_vals[3]
-    dm_amp = chain_vals[4]
-    sw_gamma = chain_vals[5]
-    sw_amp = chain_vals[6]
-    n_earth = chain_vals[7]
-    red_gamma = chain_vals[8]
-    red_amp = chain_vals[9]
+    # efac = chain_vals[0]
+    # ecorr = chain_vals[1]
+    # equad = chain_vals[2]
+    efac = 1.038504870124
+    equad = -7.173366834170855
+    ecorr = -7.173366834170855
+    dm_gamma = chain_vals[0]
+    dm_amp = chain_vals[1]
+    sw_gamma = chain_vals[2]
+    sw_amp = chain_vals[3]
+    n_earth = chain_vals[4]
+    red_gamma = chain_vals[5]
+    red_amp = chain_vals[6]
 
     m.EFAC1.value = efac
     m.ECORR1.value = ecorr
@@ -91,10 +95,10 @@ def co_coll(directory, pulsar, noise, idx):
     m.NE_SW.value = n_earth
     m.TNREDGAM.value = red_gamma
     m.TNREDAMP.value = red_amp
-    
+
     f = pint.fitter.DownhillGLSFitter(toas=t_all, model=m)
     f.fit_toas(maxiter=3, debug=True)
-
+    
     noise_dims = f.current_state.model.noise_model_dimensions(f.toas)
     ntmpar = len(f.model.free_params)
 
@@ -111,7 +115,7 @@ def co_coll(directory, pulsar, noise, idx):
 
     f_coeffs = np.linspace(1/Tspan, ((p1-p0)/2)/Tspan, int((p1-p0)/2))
 
-    interp_region = np.linspace(psr.toas.min(), psr.toas.max(), 100000)
+    interp_region = np.linspace(psr.toas.min(), math.ceil(psr.toas.max()), 100000)
     
     if noise == "sw":
     
@@ -131,6 +135,7 @@ def co_coll(directory, pulsar, noise, idx):
         times_day = times.to(u.d)
         times_value = times_day.value
         times_value = times_value[times_value > sw_ave.index.values.min()]
+        times_value = times_value[times_value < sw_ave.index.values.max()]
         sw_interp = f_interp(times_value)
         n_gpt_sw = sw_interp
 

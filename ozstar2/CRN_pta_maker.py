@@ -218,25 +218,25 @@ high_freq = selections.Selection(high_frequencies)
 
 
 # Choose which GWB
-components=120
+components=30
 for i,n in enumerate(noise):
     #power law, free spectral index, no correlations
     if "pl_nocorr_freegam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                            components=120, orf=None, name='gw')
+                            components=components, orf=None, name='gw')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform',
-                            components=120, orf=None, name='gw')
+                            components=components, orf=None, name='gw')
 
     #power law, fixed 13/3 spectral index, no correlations
     if "pl_nocorr_fixgam" == n:
         if i==0:
             crn = common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.3333,
-                            components=120, orf=None, name='gw')
+                            components=components, orf=None, name='gw')
         else:
             crn += common_red_noise_block(psd='powerlaw', prior='log-uniform', gamma_val=4.3333,
-                            components=120, orf=None, name='gw')
+                            components=components, orf=None, name='gw')
 
     #broken power law, free spectral index, no correlations
     if "bpl_nocorr_freegam" == n:
@@ -329,10 +329,10 @@ for i,n in enumerate(noise):
     if "freespec_dp" == n:
         if i==0:
             crn = common_red_noise_block(psd='spectrum', prior='log-uniform',
-                            components=60, orf='dipole', name='gw_dipole')
+                            components=components, orf='dipole', name='gw_dipole')
         else:
             crn += common_red_noise_block(psd='spectrum', prior='log-uniform',
-                            components=60, orf='dipole', name='gw_dipole')
+                            components=components, orf='dipole', name='gw_dipole')
 
     # Correlated CRN models - Monopole
     # Powerlaw Monopole
@@ -356,7 +356,7 @@ for i,n in enumerate(noise):
 
 
 models = []
-ev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/MPTA_active_noise_models/MPTA_noise_models.json"))
+ev_json = json.load(open("/fred/oz002/users/mmiles/MPTA_GW/enterprise_newdata/out_pbilby_pp_8/MPTA_noise_models_PP8.json"))
 keys = list(ev_json.keys())
 wn_json = json.load(open(noisefile))
 wnkeys = list(wn_json.keys())
@@ -430,8 +430,8 @@ if not "dm_red_misspec" in noise:
             if pm == "CHROM":
                 if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
                     log10_A_chrom_prior = parameter.Uniform(-20, -12)
-                    gamma_chrom_prior = parameter.Uniform(0, 7)
-                    chrom_gp_idx = parameter.Uniform(0,7)
+                    gamma_chrom_prior = parameter.Uniform(0, 14)
+                    chrom_gp_idx = parameter.Uniform(0,14)
                     chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
                     idx = chrom_gp_idx
                     components = high_comps
@@ -441,8 +441,8 @@ if not "dm_red_misspec" in noise:
                     s += chrom
                 elif i+1 == len(psrmodels):
                     log10_A_chrom_prior = parameter.Uniform(-20, -12)
-                    gamma_chrom_prior = parameter.Uniform(0, 7)
-                    chrom_gp_idx = parameter.Uniform(0,7)
+                    gamma_chrom_prior = parameter.Uniform(0, 14)
+                    chrom_gp_idx = parameter.Uniform(0,14)
                     chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
                     idx = chrom_gp_idx
                     components = high_comps

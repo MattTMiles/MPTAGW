@@ -83,7 +83,7 @@ high_freq = selections.Selection(high_frequencies)
 
 #psr_list = "/fred/oz002/users/mmiles/MPTA_GW/post_gauss_check.list"
 # psrlist=[ x.strip("\n") for x in open(psr_list).readlines() ]
-datadir='/fred/oz002/users/mmiles/MPTA_GW/SMBHB/SMBHB_simulated_data/ryan_data/'
+datadir='/fred/oz002/users/mmiles/MPTA_GW/SMBHB/SMBHB_simulated_data/just_SMBHB/'
 
 parfiles=sorted(glob.glob(datadir+'*.par'))
 timfiles=sorted(glob.glob(datadir+'*.tim'))
@@ -429,27 +429,28 @@ while i < len(xi_sorted):
 xi_mean=np.array(xi_mean)
 xi_err=np.array(xi_err)
 
-
-(_, caps, _) = plt.errorbar(xi_mean*180/np.pi, rho_avg, xerr=xi_err*180/np.pi, yerr=sig_avg, marker='o', ls='', 
-                                    color='0.1', fmt='o', capsize=4, elinewidth=1.2)
-
-
+fig,ax = plt.subplots(figsize=(12,7))
+#plt.figure(figsize=(10,7))
+(_, caps, _) = ax.errorbar(xi_mean*180/np.pi, rho_avg, xerr=xi_err*180/np.pi, yerr=sig_avg, marker='o', ls='', 
+                                    color='#003f5c', fmt='o', capsize=7.5, elinewidth=3.2, label = "MPTA interpulsar correlations", zorder=10)
 zeta=np.linspace(0.01,180,100)
 
 HD=get_HD_curve(zeta)
-plt.title("OS: {0:.2E}; SNR: {1:.2f}".format(OS, OS/OS_sig))
-plt.plot(zeta, OS*HD, ls='--', label='Hellings-Downs', color='C0', lw=1.5)
-plt.plot(zeta, zeta*0.0+OS_mono, ls='--', label='Monopole', color='C1', lw=1.5)
-plt.plot(zeta, OS_dip*np.cos(zeta*np.pi/180), ls='--', label='Dipole', color='C2', lw=1.5)
+#plt.title("OS: {0:.2E}; SNR: {1:.2f}".format(OS, OS/OS_sig))
+ax.plot(zeta, OS*HD, ls='--', label='Hellings-Downs', color='#117733', lw=3, zorder=1)
+#plt.plot(zeta, zeta*0.0+OS_mono, ls='--', label='Monopole', color='C1', lw=1.5)
+#plt.plot(zeta, OS_dip*np.cos(zeta*np.pi/180), ls='--', label='Dipole', color='C2', lw=1.5)
 
-plt.xlim(0, 180)
+ax.set_xlim(0, 180)
 #plt.ylim(-1e-29, 1e-29)
-plt.ylabel(r'$\hat{A}^2 \Gamma_{ab}(\zeta)$')
-plt.xlabel(r'$\zeta$ (deg)')
-
-plt.legend(loc=4)
-
-plt.tight_layout()
+ax.set_ylabel(r'$\hat{A}^2 \Gamma(\zeta_{ab})$', fontsize=15)
+ax.set_xlabel(r'$\zeta$ ($^{\circ}$)', fontsize=15)
+ax.legend(loc=1, fontsize=15)
+#plt.tick_params(labelsize=12, which="both")
+ax.tick_params(labelsize=15, which="both")
+ax.yaxis.offsetText.set_fontsize(15)
 #plt.show()
-plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/SMBHB/SMBHB_simulated_data/OS_just_SMBHB/OS_ryan_models.png")
+fig.tight_layout()
+
+plt.savefig("/fred/oz002/users/mmiles/MPTA_GW/SMBHB/SMBHB_simulated_data/OS_just_SMBHB/OS_just_SMBHB.png")
 plt.clf()

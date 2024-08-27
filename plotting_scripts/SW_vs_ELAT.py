@@ -14,9 +14,9 @@ from sklearn.neighbors import KernelDensity
 
 mpta_dir = "//fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PM_WN/"
 
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_newdata/MPTA_pulsar_list.txt"
 
-partim = "/fred/oz002/users/mmiles/MPTA_GW/partim/"
+partim = "/fred/oz002/users/mmiles/MPTA_GW/partim_frank/pp_8/"
 
 to_use = open(psr_list).readlines()
 random.shuffle(to_use)

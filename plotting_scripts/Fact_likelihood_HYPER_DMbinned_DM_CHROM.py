@@ -10,11 +10,11 @@ from sklearn.neighbors import KernelDensity
 import os
 import seaborn as sns
 
-mpta_dir = "//fred/oz002/users/mmiles/MPTA_GW/enterprise_ozstar2/out_ptmcmc/PM_WN/"
+mpta_dir = "//fred/oz002/users/mmiles/MPTA_GW/enterprise_newdata/out_ptmcmc/SMBHB_WN/"
 
-psr_list = "/fred/oz002/users/mmiles/MPTA_GW/MPTA_pulsar_list_noJ1756.txt"
+psr_list = "/fred/oz002/users/mmiles/MPTA_GW/enterprise_newdata/MPTA_pulsar_list.txt"
 
-partim = "/fred/oz002/users/mmiles/MPTA_GW/partim/"
+partim = "/fred/oz002/users/mmiles/MPTA_GW/partim_frank/pp_8/"
 
 def sigma2fwhm(sigma):
     return sigma * np.sqrt(8 * np.log(2))
@@ -56,7 +56,8 @@ for pulsar in to_use:
 
             #result_psr = bilby.result.read_in_result(psr_dir+"/MPTA_PM_result.json")
 
-            result_psr = np.load(psr_dir+"/"+psrname+"_burnt_chain.npy")
+            #result_psr = np.load(psr_dir+"/"+psrname+"_burnt_chain.npy")
+            result_psr = np.load(psr_dir+"/thinned_chain_combined.npy")
             newxbins2d = np.linspace(-18,-11,nbins*100)
             newybins2d = np.linspace(0,7,nbins*100)
 

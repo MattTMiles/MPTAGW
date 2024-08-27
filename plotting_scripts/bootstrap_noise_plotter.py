@@ -55,8 +55,8 @@ args = parser.parse_args()
 pulsar = str(args.pulsar)
 maindir = str(args.directory)
 
-real_dir = "/fred/oz002/users/mmiles/MPTA_GW/noise_paper_plots_tables/noise_realiser/"+pulsar+"/reals/"
-
+#real_dir = "/fred/oz002/users/mmiles/MPTA_GW/noise_paper_plots_tables/noise_realiser/"+pulsar+"/reals/"
+real_dir = "/fred/oz002/users/mmiles/MPTA_GW/noise_paper_plots_tables/J1909_realise/reals/"
 dm_files = glob.glob(real_dir+"real_*/dm_gpt.npy")
 red_files = glob.glob(real_dir+"real_*/red_gpt.npy")
 # ecorr_files = glob.glob(real_dir+"real_*/ecorr_gpt.npy")
@@ -151,11 +151,19 @@ ax[1].plot(red_days, med_red.T*1e6, color="tab:red", alpha=1, lw=3, label="Achro
 # ax[1].plot(ecorr_days, ecorr_combine.T*1e6, color="tab:orange", alpha=0.1, lw=0.1)
 # ax[1].plot(ecorr_days, med_ecorr.T*1e6, color="tab:orange", alpha=1, lw=3, label="GP ECORR Realisation")
 
-if len(sw_days) != 99999:
-    sw_days = sw_days[:-1]
+# if len(sw_days) != 99999:
+#     sw_days = sw_days[:-1]
+
+
 
 sg_swcombine = signal.savgol_filter(sw_combine, 4501, 4)
 sg_med_sw = signal.savgol_filter(med_sw, 4501, 4)
+
+if len(sw_days) != len(sg_swcombine.T):
+    sg_swcombine = sg_swcombine.T[:len(sw_days)]
+
+if len(sw_days) != len(sg_med_sw.T):
+    sg_swcombine = sg_med_sw.T[:len(sw_days)]
 
 ax[1].plot(sw_days, sg_swcombine.T*1e6, color="tab:green", alpha=0.1, lw=0.1)
 ax[1].plot(sw_days, sg_med_sw.T*1e6, color="tab:green", alpha=1, lw=3, label="Solar Wind")
@@ -179,6 +187,6 @@ ax[2].legend(loc='upper right', fontsize=font)
 
 ax[2].tick_params(axis='both', which='both', labelsize=15)
 fig.tight_layout()
-fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/noise_paper_plots_tables/noise_realiser/J1909-3744/resids_noise_reals_SW_SG.png")
+fig.savefig("/fred/oz002/users/mmiles/MPTA_GW/noise_paper_plots_tables/J1909_realise/plots/J1909-3744/resids_noise_reals_SW_SG.png")
 fig.clf()
 plt.clf()
