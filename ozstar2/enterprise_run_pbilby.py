@@ -51,6 +51,12 @@ import pandas as pd
 from pandas import DataFrame
 import signal
 
+from astropy import coordinates as coord
+from astropy import units as units
+from astropy import constants as aconst
+import scipy.interpolate as interpolate
+
+
 ## Fix the plot colour to white
 plt.rcParams.update({'axes.facecolor':'white'})
 
@@ -63,9 +69,9 @@ parser.add_argument("-noisefile", type = str, dest="noisefile", help="The noisef
 parser.add_argument("-modelfile", type = str, dest="modelfile", help="The model used for the analysis.", required = False)
 parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_search", help="The noise parameters to search over. Timing model is default. Include as '-noise_search noise1 noise2 noise3' etc. The _c variations of the noise redirects the noise to the constant noisefile values", \
     choices={"efac", "equad", "t2_equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_split_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx","high_comp_chrom", "dm_c", "gw", "gw_const_gamma", "gw_const_gamma_low","gw_const_gamma_wide", "lin_exp_gw_const_gamma_wide", "gw_c", "gw_c_low", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
-        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "spgw", "spgwc", "spgwc_wide", "spgwc_18", "pm_wn", "pm_wn_no_equad", "pm_wn_sw","pm_wn_altpar", "pm_wn_no_equad_altpar", "wn_sw", "wn_tester", "chrom_annual", "sw", "swdet", "free_spgw", "free_spgwc", "hfred", "pm_wn_hc", "pm_wn_sw_hc", "pm_wn_sw_hc_noeq","pm_wn_hc_noeq",\
+        "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "spgw", "spgwc", "spgwc_wide", "spgwc_18", "pm_wn", "pm_wn_no_equad", "pm_wn_sw","pm_wn_altpar", "pm_wn_no_equad_altpar", "wn_sw", "wn_tester", "chrom_annual", "chrom_annual_c", "sw", "swdet", "free_spgw", "free_spgwc", "hfred", "pm_wn_hc", "pm_wn_sw_hc", "pm_wn_sw_hc_noeq","pm_wn_hc_noeq",\
             "hc_chrom_cidx", "hc_red", "hc_dm", "hc_chrom", "mpta_pm", "mpta_pm_gauss_ecorr", "extra_red", "smbhb", "smbhb_const", "ecorr_gauss", "ecorr_gauss_c", "smbhb_wn", "smbhb_wn_all", "smbhb_const_wn", "extra_chrom_annual", "dm_gauss_bump", "chrom_gauss_bump", "extra_chrom_gauss_bump", "wn", "ecorr_split", "ecorr_split_kernel", "lin_exp_gw_squared", \
-                "smbhb_frank_psradd8", "smbhb_frank_psradd10", "smbhb_frank_pp8", "smbhb_frank_pp10", "free_spec_red", "planet_wave", "sw_c"})
+                "smbhb_frank_psradd8", "smbhb_frank_psradd10", "smbhb_frank_pp8", "smbhb_frank_pp10", "free_spec_red", "planet_wave", "sw_c", "ecorr_fast", "planet_roemer_1","planet_roemer_2","planet_roemer_3","planet_roemer_4","planet_roemer_5","planet_roemer_6","planet_roemer_7","planet_roemer_8","planet_roemer_9"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc", "hyper", "ultra", "pbilby"}, required=True)
 parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
 parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
@@ -354,6 +360,72 @@ def chrom_splitter(freqs):
     return d
 
 
+@signal_base.function
+def fit_planet_app2(toas,psrMass,mass,period,phase,omega,ecc,ismasslog = False,isecclog=False):
+    # replace the highly-degenerate time of periastron
+    # with a 'phase', i.e true anomaly/2pi, between [0,1), at a specific time,
+    # e.g. 55000 MJD
+    if ismasslog:
+        mass = 10**mass
+    if isecclog:
+        ecc = 10**ecc
+
+    Omega_b = 2.0*np.pi/(units.day*period)
+    e = ecc
+
+    tref = 55000 #MJD
+    tref = tref*units.day
+    if phase <= 0.5:
+        Eref = np.arccos((e+np.cos(2*np.pi*phase))/(1+e*np.cos(2*np.pi*phase)))
+    else:
+        Eref = 2*np.pi-np.arccos((e+np.cos(2*np.pi*phase))/(1+e*np.cos(2*np.pi*phase)))
+
+    mean_anom_ref = Eref - e*np.sin(Eref)
+    t0 = tref - mean_anom_ref/Omega_b #should be in sec
+
+    #inc=inc*units.degree
+
+    M1 = psrMass * units.M_sun
+    M2 = mass * units.M_earth
+    Mtot = M1+M2
+    Mr = M2**3 / Mtot**2
+    a1 = np.power(Mr*aconst.G/Omega_b**2,1.0/3.0).to(units.m)
+    #asini = a1 * np.sin(inc)
+    asini = a1
+    om=coord.Angle(omega*units.deg)
+
+    def get_roemer(t):
+
+        def ecc_anom(E,e,M):
+            return (E-e*np.sin(E))-M
+
+        mean_anom = coord.Angle((Omega_b * (t*units.s - t0)).decompose().value*units.rad)
+
+        mean_anom.wrap_at(2*np.pi*units.rad,inplace=True)
+        mean_anom = mean_anom.rad
+        
+        ### read/interp E solution from appropriate ecc file:
+        
+        e_app = np.around(e,decimals=5)
+        #print('\n????? Dir: ',os.getcwd())
+        path_to_ecc = "/fred/oz002/users/mmiles/MPTA_planet_checker/model_components/"
+        sampled_mean_anom,sampled_E = np.load(path_to_ecc+'E_e_5dig/E_e=%.5f.npy' %e_app)
+        E_from_m = interpolate.interp1d(sampled_mean_anom,sampled_E,copy=False,kind='cubic')
+        #if (mean_anom<1e-6).any():
+        #    print(e,e_app)
+        #    print(mean_anom[mean_anom<1e-6])
+	#print('-------- MEAN ANOM: '+str(mean_anom))
+        #print('-------- min Sampled: '+str(min(sampled_mean_anom)))
+        E = E_from_m(mean_anom)
+ 
+        roemer = (asini*(np.cos(E)-e)*np.sin(om) + asini*np.sin(E)*np.sqrt(1.0-e**2)*np.cos(om))/aconst.c
+
+        return roemer
+
+    roemer = get_roemer(toas)
+    return roemer.to(units.s).value
+
+
 chrom_split = selections.Selection(chrom_splitter)
 
 low_freq = selections.Selection(low_frequencies)
@@ -376,6 +448,8 @@ for n in noise:
     if "equad_c" == n:
         equad = parameter.Constant()
     if "ecorr" == n:
+        ecorr = parameter.Uniform(-10,-1) 
+    if "ecorr_fast" == n:
         ecorr = parameter.Uniform(-10,-1) 
     if "ecorr_split" == n:
         ecorr = parameter.Uniform(-10,-1) 
@@ -483,12 +557,96 @@ for n in noise:
         log10_Amp_chrom1yr = parameter.Uniform(-20, -5)
         phase_chrom1yr = parameter.Uniform(0, 2*np.pi)
         idx_chrom1yr = parameter.Uniform(0, 14)
+    if "chrom_annual_c" == n:
+        log10_Amp_chrom1yr = parameter.Constant()
+        phase_chrom1yr = parameter.Constant()
+        idx_chrom1yr = parameter.Constant()
 
     if "planet_wave" == n:
         log10_Amp_planet = parameter.Uniform(-20, -5)
         phase_planet = parameter.Uniform(0, 2*np.pi)
         log10_orb_f = parameter.Uniform(-9, -6)
 
+    if "planet_roemer_1" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(5,10.1)
+
+    if "planet_roemer_2" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(10.1, 21.3)
+
+    if "planet_roemer_3" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(21.3, 42.5)
+    
+    if "planet_roemer_4" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(42.5, 85)
+
+    if "planet_roemer_5" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(85, 170)
+
+    if "planet_roemer_6" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(170, 340)
+
+    if "planet_roemer_7" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(340, 390)
+
+    if "planet_roemer_8" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(390, 780)
+
+    if "planet_roemer_9" == n:
+        
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        period = parameter.Uniform(780, 1560)
 
     if "gw" == n:
         log10_A_gw = parameter.Uniform(-20,-11)('log10_A_gw')
@@ -572,6 +730,9 @@ for n in noise:
             s += ef
     if "ecorr" == n:
         ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=ecorr_selection, method="sherman-morrison")
+        s += ec
+    if "ecorr_fast" == n:
+        ec = white_signals.EcorrKernelNoise(log10_ecorr=ecorr, selection=ecorr_selection, method="fast-sherman-morrison")
         s += ec
     if "ecorr_split" == n:
         ec = gp_signals.EcorrBasisModel(log10_ecorr=ecorr, selection=mk_ecorr_selection)
@@ -720,7 +881,7 @@ for n in noise:
         add_chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='add_chrom_gp')
         s += add_chrom
 
-    if "chrom_annual" == n:
+    if "chrom_annual" == n or "chrom_annual_c" == n:
         wf = chrom_yearly_sinusoid(log10_Amp=log10_Amp_chrom1yr,
                             phase=phase_chrom1yr, idx=idx_chrom1yr)
         chrom1yr = deterministic_signals.Deterministic(wf, name="chrom1yr")
@@ -730,6 +891,21 @@ for n in noise:
         wf = planet_sinusoid(log10_Amp=log10_Amp_planet, phase=phase_planet, log10_orb_f=log10_orb_f)
         planet_waveform = deterministic_signals.Deterministic(wf, name="planet_wave")
         s += planet_waveform
+
+    if "planet_roemer" in n:
+
+        # psrMass = parameter.Constant(1.4)
+        # omega = parameter.Uniform(0, 2*np.pi)
+        # phase = parameter.Uniform(0, 1)
+        # ecc = parameter.Uniform(-9, np.log10(0.9))
+        # mass = parameter.Uniform(-5, -1)
+        # period = parameter.Uniform(5,10.1)
+
+        planet = fit_planet_app2(psrMass=psrMass, mass=mass, period=period, phase=phase, omega=omega, ecc=ecc, ismasslog = True, isecclog=True)
+
+        bin_number = n.split("_")[-1]
+        planet_signal = deterministic_signals.Deterministic(planet, name='planet_roemer_bin_'+str(bin_number))
+        s += planet_signal
 
     if "dm_gauss_bump" == n:
         gauss_bump = dm_gaussian_bump(tmin, tmax, idx=2, sigma_min=604800, sigma_max=tmax[0]-tmin[0], log10_A_low=-10, log10_A_high=-1, name='dm_bump')
