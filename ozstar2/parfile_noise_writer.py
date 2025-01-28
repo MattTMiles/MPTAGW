@@ -32,7 +32,7 @@ for n in psr_model:
         openpar.write("EFAC -f KAT_MKBF {} \n".format(noise_json[n]))
     if "equad" in n:
         openpar.write("TNEQ -f KAT_MKBF {} \n".format(noise_json[n]))
-    if "ecorr_all" in n:
+    if "ecorr" in n:
         openpar.write("TNECORR -f KAT_MKBF {} \n".format(noise_json[n]))
     if "ecorr_low" in n:
         openpar.write("TNECORRLOW -f KAT_MKBF {} \n".format(noise_json[n]))
@@ -53,26 +53,26 @@ for n in psr_model:
         openpar.write("SWC {} \n".format(120))
     
     if "dm_gp_gamma" in n:
-        openpar.write("DMGam {} \n".format(noise_json[n]))
+        openpar.write("TNDMGam {} \n".format(noise_json[n]))
     if "dm_gp_log10_A" in n:
-        openpar.write("DMAmp {} \n".format(noise_json[n]))
-        openpar.write("DMC {} \n".format(120))
+        openpar.write("TNDMAmp {} \n".format(noise_json[n]))
+        openpar.write("TNDMC {} \n".format(120))
     
     if "chrom_gp_gamma" in n or "chrom_wide_gp_gamma" in n or "chromcidx_gp_gamma" in n:
-        openpar.write("ChromGam {} \n".format(noise_json[n]))
+        openpar.write("TNCHROMGAM {} \n".format(noise_json[n]))
     if "chrom_gp_log10_A" in n or "chrom_wide_gp_log10_A" in n or "chromcidx_gp_log10_A" in n:
-        openpar.write("ChromAmp {} \n".format(noise_json[n]))
-        openpar.write("ChromC {} \n".format(120))
+        openpar.write("TNCHROMAMP {} \n".format(noise_json[n]))
+        openpar.write("TNCHROMC {} \n".format(120))
         if psrname+"_chrom_gp_idx" not in psr_model and psrname+"_chrom_wide_gp_idx" not in psr_model:
-            openpar.write("ChromIdx {} \n".format(4))
+            openpar.write("TNCHROMIDX {} \n".format(4))
     if "chrom_gp_idx" in n or "chrom_wide_gp_idx" in n:
-        openpar.write("ChromIdx {} \n".format(noise_json[n]))
+        openpar.write("TNCHROMIDX {} \n".format(noise_json[n]))
 
     if "red_noise_gamma" in n:
-        openpar.write("RedGam {} \n".format(noise_json[n]))
+        openpar.write("TNREDGAM {} \n".format(noise_json[n]))
     if "red_noise_log10_A" in n:
-        openpar.write("RedAmp {} \n".format(noise_json[n]))
-        openpar.write("RedC {} \n".format(120))
+        openpar.write("TNREDAMP {} \n".format(noise_json[n]))
+        openpar.write("TNREDC {} \n".format(120))
 
     #deterministic properties
     if "chrom1yr_idx" in n:
@@ -93,7 +93,7 @@ for n in psr_model:
     if "chrom_bump_t0" in n:
         openpar.write("CHROMBUMPT {} \n".format(noise_json[n]))        
 
-openpar.write("TNGWAMP {} \n".format(-14.515))
-openpar.write("TNGWGAM {} \n".format(4.333))
+openpar.write("TNGWAMP {} \n".format(-14.25))
+openpar.write("TNGWGAM {} \n".format(3.60))
 openpar.write("TNGWC {} \n".format(30))
     

@@ -71,7 +71,8 @@ parser.add_argument("-noise_search", type = str.lower, nargs="+",dest="noise_sea
     choices={"efac", "equad", "t2_equad", "ecorr", "red", "efac_c", "equad_c", "ecorr_c", "ecorr_split_c", "ecorr_check", "red_c", "dm", "chrom", "chrom_c","chrom_cidx","high_comp_chrom", "dm_c", "gw", "gw_const_gamma", "gw_const_gamma_low","gw_const_gamma_wide", "lin_exp_gw_const_gamma_wide", "gw_c", "gw_c_low", "dm_wide", "dm_wider", "red_wide", "chrom_wide", "chrom_cidx_wide", "efac_wide",\
         "band_low","band_low_c","band_high","band_high_c", "band_high_wide", "spgw", "spgwc", "spgwc_wide", "spgwc_18", "pm_wn", "pm_wn_no_equad", "pm_wn_sw","pm_wn_altpar", "pm_wn_no_equad_altpar", "wn_sw", "wn_tester", "chrom_annual", "chrom_annual_c", "sw", "swdet", "free_spgw", "free_spgwc", "hfred", "pm_wn_hc", "pm_wn_sw_hc", "pm_wn_sw_hc_noeq","pm_wn_hc_noeq",\
             "hc_chrom_cidx", "hc_red", "hc_dm", "hc_chrom", "mpta_pm", "mpta_pm_gauss_ecorr", "extra_red", "smbhb", "smbhb_const", "ecorr_gauss", "ecorr_gauss_c", "smbhb_wn", "smbhb_wn_all", "smbhb_const_wn", "extra_chrom_annual", "dm_gauss_bump", "chrom_gauss_bump", "extra_chrom_gauss_bump", "wn", "ecorr_split", "ecorr_split_kernel", "lin_exp_gw_squared", \
-                "smbhb_frank_psradd8", "smbhb_frank_psradd10", "smbhb_frank_pp8", "smbhb_frank_pp10", "free_spec_red", "planet_wave", "sw_c", "ecorr_fast", "planet_roemer_1","planet_roemer_2","planet_roemer_3","planet_roemer_4","planet_roemer_5","planet_roemer_6","planet_roemer_7","planet_roemer_8","planet_roemer_9"})
+                "smbhb_frank_psradd8", "smbhb_frank_psradd10", "smbhb_frank_pp8", "smbhb_frank_pp10", "free_spec_red", "planet_wave", "sw_c", "ecorr_fast", "planet_roemer_1","planet_roemer_2","planet_roemer_3","planet_roemer_4","planet_roemer_5","planet_roemer_6","planet_roemer_7","planet_roemer_8","planet_roemer_9", "planet_search_roemer_1", \
+                    "planet_search_roemer_2", "planet_search_roemer_3", "planet_search_roemer_4", "planet_search_roemer_5", "planet_search_roemer_6", "planet_search_roemer_7", "planet_search_roemer_8", "planet_search_roemer_9", "planet_search_general", "pm_wn_er_control", "glitch_model"})
 parser.add_argument("-sampler", dest="sampler", choices={"bilby", "ptmcmc","ppc", "hyper", "ultra", "pbilby"}, required=True)
 parser.add_argument("-pool",dest="pool", type=int, help="Number of cores to request (default=1)")
 parser.add_argument("-nlive", dest="nlive", type=int, help="Number of nlive points to use (default=1000)")
@@ -359,6 +360,19 @@ def chrom_splitter(freqs):
     
     return d
 
+@signal_base.function
+def glitch_model(toas, sign, log10_A, t0):
+
+    
+    A = 10**log10_A
+    #t0 *= const.day
+
+    def heaviside(x):
+        return 0.5 * (np.sign(x) + 1)
+    
+    func_toas = toas/const.day
+
+    return A * np.sign(sign) * heaviside(func_toas - t0) * (func_toas - t0)
 
 @signal_base.function
 def fit_planet_app2(toas,psrMass,mass,period,phase,omega,ecc,ismasslog = False,isecclog=False):
@@ -697,6 +711,13 @@ for n in noise:
         log10_A_bn = parameter.Constant()
         gamma_bn = parameter.Constant()
 
+    if "glitch_model" == n:
+        #sign_param_glitch= parameter.Uniform(-1,1)
+        t0_glitch = parameter.Uniform(tmin[0]/const.day,tmax[0]/const.day)
+        log10_A_glitch = parameter.Uniform(-20, -11)
+
+
+
 
 
 ## Put together the signal model
@@ -906,6 +927,11 @@ for n in noise:
         bin_number = n.split("_")[-1]
         planet_signal = deterministic_signals.Deterministic(planet, name='planet_roemer_bin_'+str(bin_number))
         s += planet_signal
+
+    if "glitch_model" == n:
+        glitch = glitch_model(sign=-1, log10_A=log10_A_glitch, t0=t0_glitch)
+        glitch = deterministic_signals.Deterministic(glitch, name="glitch")
+        s += glitch
 
     if "dm_gauss_bump" == n:
         gauss_bump = dm_gaussian_bump(tmin, tmax, idx=2, sigma_min=604800, sigma_max=tmax[0]-tmin[0], log10_A_low=-10, log10_A_high=-1, name='dm_bump')
@@ -3664,7 +3690,8 @@ for n in noise:
         gw = gp_signals.FourierBasisGP(spectrum=gpl, components=30, Tspan=Tspan, name='gwb')
         s += gw
 
-    if "planet_checker" == n:
+
+    if "planet_search_roemer" in n:
         # !!! Not finished !!! #
         ev_json = json.load(open(modelfile))
         keys = list(ev_json.keys())
@@ -3837,9 +3864,41 @@ for n in noise:
 
             s += sw
 
-        if "smbhb_frank_psradd8" == n:
-            log10_A_gw = parameter.Uniform(-18,-12)('log10_A_gw')
-            gamma_gw = parameter.Constant(4.33)('gamma_gw')
+        
+        #For loop to assign planet roemer delay function
+        psrMass = parameter.Constant(1.4)
+        omega = parameter.Uniform(0, 2*np.pi)
+        phase = parameter.Uniform(0, 1)
+        ecc = parameter.Uniform(-9, np.log10(0.9))
+        mass = parameter.Uniform(-5, -1)
+        
+        if "planet_search_roemer_1" == n:
+            period = parameter.Uniform(5,10.1)
+        if "planet_search_roemer_2" == n:
+            period = parameter.Uniform(10.1, 21.3)
+        if "planet_search_roemer_3" == n:
+            period = parameter.Uniform(21.3, 42.5)
+        if "planet_search_roemer_4" == n:
+            period = parameter.Uniform(42.5, 85)
+        if "planet_search_roemer_5" == n:
+            period = parameter.Uniform(85, 170)
+        if "planet_search_roemer_6" == n:
+            period = parameter.Uniform(170, 340)
+        if "planet_search_roemer_7" == n:
+            period = parameter.Uniform(340, 390)
+        if "planet_search_roemer_8" == n:
+            period = parameter.Uniform(390, 780)
+        if "planet_search_roemer_9" == n:
+            period = parameter.Uniform(780, 1560)
+        
+
+        planet = fit_planet_app2(psrMass=psrMass, mass=mass, period=period, phase=phase, omega=omega, ecc=ecc, ismasslog = True, isecclog=True)
+
+        bin_number = n.split("_")[-1]
+        planet_signal = deterministic_signals.Deterministic(planet, name='planet_roemer_bin_'+str(bin_number))
+        s += planet_signal
+
+            
 
 
         for i, n in enumerate(noise):
@@ -3851,25 +3910,387 @@ for n in noise:
                     rn = gp_signals.FourierBasisGP(spectrum=pl, components=high_comps, Tspan=Tspan)
                     s += rn
 
+
+
+    if "planet_search_general" == n:
+        # !!! Not finished !!! #
+        ev_json = json.load(open(modelfile))
+        keys = list(ev_json.keys())
+        # Get list of models
+        psrmodels = [ psr_model for psr_model in keys if pulsar in psr_model ][0].split("_")[1:]
+        high_comps = 120
+        wn_json = json.load(open(noisefile))
+        wnkeys = list(wn_json.keys())
+        # Get list of wn models
+        wnmodels = [ wn_model.split("_")[-1] for wn_model in wnkeys if pulsar in wn_model ]
+
+        for i, pm in enumerate(psrmodels):
+            
+            if pm == "RN" or pm == "RED":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_red = parameter.Uniform(-20, -11)
+                    gamma_red = parameter.Uniform(0, 7)
+                    pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                    rn = gp_signals.FourierBasisGP(spectrum=pl, components=high_comps, Tspan=Tspan)
+                    s += rn
+                elif i+1 == len(psrmodels):
+                    log10_A_red = parameter.Uniform(-20, -11)
+                    gamma_red = parameter.Uniform(0, 7)
+                    pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                    rn = gp_signals.FourierBasisGP(spectrum=pl, components=high_comps, Tspan=Tspan)
+                    s += rn
+
+            if pm == "RNWIDE" or ( pm == "RN" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_red = parameter.Uniform(-20, -11)
+                gamma_red = parameter.Uniform(0, 14)
+                pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                rn = gp_signals.FourierBasisGP(spectrum=pl, components=120, Tspan=Tspan)
+                s += rn
+
+            if pm =="DM":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_dm = parameter.Uniform(-20, -11)
+                    gamma_dm = parameter.Uniform(0, 7)
+                    dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=high_comps,option="powerlaw")
+                    s += dm
+                elif i+1 == len(psrmodels):
+                    log10_A_dm = parameter.Uniform(-20, -11)
+                    gamma_dm = parameter.Uniform(0, 7)
+                    dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=high_comps,option="powerlaw")
+                    s += dm 
+            
+            if pm == "DMWIDE" or ( pm == "DM" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_dm = parameter.Uniform(-20, -11)
+                gamma_dm = parameter.Uniform(0, 14)
+                dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=120,option="powerlaw")
+                s += dm
+
+            if pm == "CHROM":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 14)
+                    chrom_gp_idx = parameter.Uniform(0,14)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+                elif i+1 == len(psrmodels):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 14)
+                    chrom_gp_idx = parameter.Uniform(0,14)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+
+            if pm == "CHROMWIDE" or ( pm == "CHROM" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                gamma_chrom_prior = parameter.Uniform(0, 14)
+                chrom_gp_idx = parameter.Uniform(0,14)
+                chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                idx = chrom_gp_idx
+                components = 120
+                chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                        idx=idx)
+                chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                s += chrom
+
+            if pm == "CHROMCIDX":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 7)
+                    chrom_gp_idx = parameter.Constant(4)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+                elif i+1 == len(psrmodels):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 7)
+                    chrom_gp_idx = parameter.Constant(4)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+
+            if pm == "CHROMCIDXWIDE" or ( pm == "CHROMCIDX" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                gamma_chrom_prior = parameter.Uniform(0, 14)
+                chrom_gp_idx = parameter.Constant(4)
+                chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                idx = chrom_gp_idx
+                components = 120
+                chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                        idx=idx)
+                chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                s += chrom
+
+            if pm == "CHROMANNUAL":
+                log10_Amp_chrom1yr = parameter.Uniform(-20, -4)
+                phase_chrom1yr = parameter.Uniform(0, 2*np.pi)
+                idx_chrom1yr = parameter.Uniform(0, 14)
+                wf = chrom_yearly_sinusoid(log10_Amp=log10_Amp_chrom1yr, phase=phase_chrom1yr, idx=idx_chrom1yr)
+                chrom1yr = deterministic_signals.Deterministic(wf, name="chrom1yr")
+                s += chrom1yr
+
+            if pm == "CHROMBUMP":
+                chrom_gauss_bump = dm_gaussian_bump(tmin, tmax, idx="vary", sigma_min=604800, sigma_max=tmax[0]-tmin[0], log10_A_low=-10, log10_A_high=-1, name='chrom_bump')
+                s += chrom_gauss_bump
+
+            if pm == "SW":
+                n_earth = parameter.Uniform(0, 20)
+                deter_sw = solar_wind(n_earth=n_earth)
+                mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
+
+                Tspan = psr.toas.max() - psr.toas.min()
+                max_cadence = 60
+                sw_components = 120
+
+                log10_A_sw = parameter.Uniform(-10, 1)
+                gamma_sw = parameter.Uniform(-4, 4)
+                sw_prior = utils.powerlaw(log10_A=log10_A_sw, gamma=gamma_sw)
+                sw_basis = createfourierdesignmatrix_solar_dm(nmodes=sw_components, Tspan=Tspan)
+
+                sw = mean_sw + gp_signals.BasisGP(sw_prior, sw_basis, name='gp_sw')
+
+                s += sw
+            
+            if pm == "SWDET":
+                n_earth = parameter.Uniform(0, 20)
+                deter_sw = solar_wind(n_earth=n_earth)
+                mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
+
+                sw = mean_sw
+
+                s += sw
+            
+        if "SW" not in psrmodels and "SWDET" not in psrmodels:
+            n_earth = parameter.Constant(4)
+            deter_sw = solar_wind(n_earth=n_earth)
+            mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
+
+            sw = mean_sw
+
+            s += sw
+
+
+
+        log10_Amp_planet = parameter.Uniform(-20, -5)
+        phase_planet = parameter.Uniform(0, 2*np.pi)
+        log10_orb_f = parameter.Uniform(-9, -6)
+
+        wf = planet_sinusoid(log10_Amp=log10_Amp_planet, phase=phase_planet, log10_orb_f=log10_orb_f)
+        planet_waveform = deterministic_signals.Deterministic(wf, name="planet_wave")
+        s += planet_waveform
+
+            
+
+
         for i, n in enumerate(noise):
-            if "extra_chrom_annual" == n:
-                if len([ pn for pn in psrmodels if "CHROMANNUAL" in pn ]) == 0:
-                    log10_Amp_chrom1yr = parameter.Uniform(-20, -4)
-                    phase_chrom1yr = parameter.Uniform(0, 2*np.pi)
-                    idx_chrom1yr = parameter.Uniform(0, 14)
-                    wf = chrom_yearly_sinusoid(log10_Amp=log10_Amp_chrom1yr, phase=phase_chrom1yr, idx=idx_chrom1yr)
-                    chrom1yr = deterministic_signals.Deterministic(wf, name="chrom1yr")
-                    s += chrom1yr
-        
+            if "extra_red" == n:
+                if len([ pn for pn in psrmodels if "RN" in pn ]) == 0:
+                    log10_A_red = parameter.Uniform(-20, -11)
+                    gamma_red = parameter.Uniform(0, 7)
+                    pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                    rn = gp_signals.FourierBasisGP(spectrum=pl, components=high_comps, Tspan=Tspan)
+                    s += rn
+
+
+
+    if "pm_wn_er_control" == n:
+        ev_json = json.load(open(modelfile))
+        keys = list(ev_json.keys())
+        # Get list of models
+        psrmodels = [ psr_model for psr_model in keys if pulsar in psr_model ][0].split("_")[1:]
+        high_comps = 120
+        wn_json = json.load(open(noisefile))
+        wnkeys = list(wn_json.keys())
+        # Get list of wn models
+        wnmodels = [ wn_model.split("_")[-1] for wn_model in wnkeys if pulsar in wn_model ]
+
+        for i, pm in enumerate(psrmodels):
+            
+            if pm == "RN" or pm == "RED":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_red = parameter.Uniform(-20, -11)
+                    gamma_red = parameter.Uniform(0, 7)
+                    pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                    rn = gp_signals.FourierBasisGP(spectrum=pl, components=high_comps, Tspan=Tspan)
+                    s += rn
+                elif i+1 == len(psrmodels):
+                    log10_A_red = parameter.Uniform(-20, -11)
+                    gamma_red = parameter.Uniform(0, 7)
+                    pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                    rn = gp_signals.FourierBasisGP(spectrum=pl, components=high_comps, Tspan=Tspan)
+                    s += rn
+
+            if pm == "RNWIDE" or ( pm == "RN" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_red = parameter.Uniform(-20, -11)
+                gamma_red = parameter.Uniform(0, 14)
+                pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                rn = gp_signals.FourierBasisGP(spectrum=pl, components=120, Tspan=Tspan)
+                s += rn
+
+            if pm =="DM":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_dm = parameter.Uniform(-20, -11)
+                    gamma_dm = parameter.Uniform(0, 7)
+                    dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=high_comps,option="powerlaw")
+                    s += dm
+                elif i+1 == len(psrmodels):
+                    log10_A_dm = parameter.Uniform(-20, -11)
+                    gamma_dm = parameter.Uniform(0, 7)
+                    dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=high_comps,option="powerlaw")
+                    s += dm 
+            
+            if pm == "DMWIDE" or ( pm == "DM" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_dm = parameter.Uniform(-20, -11)
+                gamma_dm = parameter.Uniform(0, 14)
+                dm = dm_noise(log10_A=log10_A_dm,gamma=gamma_dm,Tspan=Tspan,components=120,option="powerlaw")
+                s += dm
+
+            if pm == "CHROM":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 14)
+                    chrom_gp_idx = parameter.Uniform(0,14)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+                elif i+1 == len(psrmodels):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 14)
+                    chrom_gp_idx = parameter.Uniform(0,14)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+
+            if pm == "CHROMWIDE" or ( pm == "CHROM" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                gamma_chrom_prior = parameter.Uniform(0, 14)
+                chrom_gp_idx = parameter.Uniform(0,14)
+                chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                idx = chrom_gp_idx
+                components = 120
+                chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                        idx=idx)
+                chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                s += chrom
+
+            if pm == "CHROMCIDX":
+                if ( i+1 < len(psrmodels) and psrmodels[i+1] != "WIDE" ):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 7)
+                    chrom_gp_idx = parameter.Constant(4)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+                elif i+1 == len(psrmodels):
+                    log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                    gamma_chrom_prior = parameter.Uniform(0, 7)
+                    chrom_gp_idx = parameter.Constant(4)
+                    chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                    idx = chrom_gp_idx
+                    components = high_comps
+                    chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                            idx=idx)
+                    chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                    s += chrom
+
+            if pm == "CHROMCIDXWIDE" or ( pm == "CHROMCIDX" and ( i+1 < len(psrmodels) and psrmodels[i+1] == "WIDE" ) ):
+                log10_A_chrom_prior = parameter.Uniform(-20, -11)
+                gamma_chrom_prior = parameter.Uniform(0, 14)
+                chrom_gp_idx = parameter.Constant(4)
+                chrom_model = utils.powerlaw(log10_A=log10_A_chrom_prior, gamma=gamma_chrom_prior)
+                idx = chrom_gp_idx
+                components = 120
+                chrom_basis = gp_bases.createfourierdesignmatrix_chromatic(nmodes=components,
+                                                                        idx=idx)
+                chrom = gp_signals.BasisGP(chrom_model, chrom_basis, name='chrom_gp')
+                s += chrom
+
+            if pm == "CHROMANNUAL":
+                log10_Amp_chrom1yr = parameter.Uniform(-20, -4)
+                phase_chrom1yr = parameter.Uniform(0, 2*np.pi)
+                idx_chrom1yr = parameter.Uniform(0, 14)
+                wf = chrom_yearly_sinusoid(log10_Amp=log10_Amp_chrom1yr, phase=phase_chrom1yr, idx=idx_chrom1yr)
+                chrom1yr = deterministic_signals.Deterministic(wf, name="chrom1yr")
+                s += chrom1yr
+
+            if pm == "CHROMBUMP":
+                chrom_gauss_bump = dm_gaussian_bump(tmin, tmax, idx="vary", sigma_min=604800, sigma_max=tmax[0]-tmin[0], log10_A_low=-10, log10_A_high=-1, name='chrom_bump')
+                s += chrom_gauss_bump
+
+            if pm == "SW":
+                n_earth = parameter.Uniform(0, 20)
+                deter_sw = solar_wind(n_earth=n_earth)
+                mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
+
+                Tspan = psr.toas.max() - psr.toas.min()
+                max_cadence = 60
+                sw_components = 120
+
+                log10_A_sw = parameter.Uniform(-10, 1)
+                gamma_sw = parameter.Uniform(-4, 4)
+                sw_prior = utils.powerlaw(log10_A=log10_A_sw, gamma=gamma_sw)
+                sw_basis = createfourierdesignmatrix_solar_dm(nmodes=sw_components, Tspan=Tspan)
+
+                sw = mean_sw + gp_signals.BasisGP(sw_prior, sw_basis, name='gp_sw')
+
+                s += sw
+            
+            if pm == "SWDET":
+                n_earth = parameter.Uniform(0, 20)
+                deter_sw = solar_wind(n_earth=n_earth)
+                mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
+
+                sw = mean_sw
+
+                s += sw
+            
+        if "SW" not in psrmodels and "SWDET" not in psrmodels:
+            n_earth = parameter.Constant(4)
+            deter_sw = solar_wind(n_earth=n_earth)
+            mean_sw = deterministic_signals.Deterministic(deter_sw, name='n_earth')
+
+            sw = mean_sw
+
+            s += sw
+
+            
+
         for i, n in enumerate(noise):
-            if "extra_chrom_gauss_bump" == n:
-                if len([ pn for pn in psrmodels if "CHROMBUMP" in pn ]) == 0:
-                    chrom_gauss_bump = dm_gaussian_bump(tmin, tmax, idx="vary", sigma_min=604800, sigma_max=tmax[0]-tmin[0], log10_A_low=-10, log10_A_high=-1, name='chrom_bump')
-                    s += chrom_gauss_bump
-
-
-
-
+            if "extra_red" == n:
+                if len([ pn for pn in psrmodels if "RN" in pn ]) == 0:
+                    log10_A_red = parameter.Uniform(-20, -11)
+                    gamma_red = parameter.Uniform(0, 7)
+                    pl = utils.powerlaw(log10_A=log10_A_red, gamma=gamma_red)
+                    rn = gp_signals.FourierBasisGP(spectrum=pl, components=high_comps, Tspan=Tspan)
+                    s += rn
 
 models = []
         

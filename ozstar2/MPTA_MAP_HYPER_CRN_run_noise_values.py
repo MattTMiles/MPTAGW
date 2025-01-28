@@ -290,6 +290,8 @@ elif extract == "full_global":
     f.close()
     chainall = np.load("CRN_all_updated_short.npy")
 
+    chainall = np.loadtxt("master_chain_CRN_DATA_new.txt")
+
     indgamma = np.argwhere(["gw_gamma" in p for p in pars]).squeeze()
 
     #chainall = chainall[ (chainall[:, indgamma] < 4.43) * (chainall[:, indgamma] > 4.23) ]

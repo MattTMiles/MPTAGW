@@ -260,6 +260,10 @@ def lazy_noise_reducer_ecorr_gauss(parfile, timfile, dest, sw_extract = False, g
     fig1.savefig(dest+"/"+pulsar+"_residual_plot.png")
     plt.close()
 
+    white_weights = 1/(res_df["WN Scaled Uncertainty (s)"].values**2)
+    white_xbar = np.sum(whitened_residuals*white_weights)/np.sum(white_weights)
+    white_rms = np.sqrt(np.sum((white_weights)*((whitened_residuals-white_xbar)**2))/np.sum(white_weights))*10**6
+
     ws = res_df["Noise subtracted (s)"]/res_df["WN Scaled Uncertainty (s)"].values
     ws = ws - np.median(ws)
     ws_std_full = np.std(ws)
@@ -291,6 +295,20 @@ def lazy_noise_reducer_ecorr_gauss(parfile, timfile, dest, sw_extract = False, g
     weights = 1/(unc_WA.values**2)
     xbar = np.sum(nonres_WA*weights)/np.sum(weights)
     non_rms = np.sqrt(np.sum((weights)*((nonres_WA-xbar)**2))/np.sum(weights))*10**6
+
+    ave_white_weights = 1/(unc_WA.values**2)
+    ave_white_xbar = np.sum(res_WA*ave_white_weights)/np.sum(ave_white_weights)
+    ave_white_rms = np.sqrt(np.sum((ave_white_weights)*((res_WA-ave_white_xbar)**2))/np.sum(ave_white_weights))
+    
+    if hasattr(m, "ECORR1"):
+        ave_white_rms = np.sqrt(ave_white_rms**2 + ((10**m.ECORR1.value)**2))*10**6
+    else:
+        ave_white_rms = ave_white_rms*10**6
+    
+
+    openlist = open("/fred/oz002/users/mmiles/MPTA_GW/gaussianity_checks/pp_8/trial/wrms.list", "a")
+    #openlist.write("{0}_whitened_wrms: {1:.3f} \n".format(pulsar, white_rms))
+    openlist.write("{0}_whitened_average_wrms: {1:.3f} \n".format(pulsar, ave_white_rms))
 
     res_WA = res_WA - np.mean(res_WA)
     fig2, ax2 = plt.subplots(figsize=(16,5))
